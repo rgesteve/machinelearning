@@ -26,6 +26,10 @@ namespace Samples.Dynamic.Trainers.Regression
                 return;
             }
 
+            var p = System.Diagnostics.Process.GetCurrentProcess();
+            Console.WriteLine($"The ID of the current process is {p.Id}.  Press a key to continue.");
+            Console.ReadKey();
+
             var tg = System.Diagnostics.Stopwatch.StartNew();
             var t0 = System.Diagnostics.Stopwatch.StartNew();
 
