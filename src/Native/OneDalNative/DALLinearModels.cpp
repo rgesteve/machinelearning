@@ -52,8 +52,8 @@ void logisticRegressionLBFGSComputeTemplate(FPType * featuresPtr, int * labelsPt
     NumericTablePtr weightsTable(new HomogenNumericTable<FPType>(weightsPtr, 1, nRows));
 
     SharedPtr<optimization_solver::lbfgs::Batch<FPType>> lbfgsAlgorithm(new optimization_solver::lbfgs::Batch<FPType>());
-    lbfgsAlgorithm->parameter.batchSize = featuresTable->getNumberOfRows();
-    lbfgsAlgorithm->parameter.correctionPairBatchSize = featuresTable->getNumberOfRows();
+    lbfgsAlgorithm->parameter.batchSize = nThreads > 1 && featuresTable->getNumberOfRows() > 1000 ? 1000 : featuresTable->getNumberOfRows();
+    lbfgsAlgorithm->parameter.correctionPairBatchSize = 100;
     lbfgsAlgorithm->parameter.L = 1;
     lbfgsAlgorithm->parameter.m = m;
     lbfgsAlgorithm->parameter.accuracyThreshold = accuracyThreshold;
