@@ -9,6 +9,7 @@ using Microsoft.ML.Transforms;
 
 namespace Microsoft.ML
 {
+#if false
     public static class OneDalCatalog
     {
         public static KnnClassificationTrainer KnnClassification(
@@ -16,4 +17,5 @@ namespace Microsoft.ML
 	    int numClasses)
             => new KnnClassificationTrainer(CatalogUtils.GetEnvironment(catalog), numClasses);
     }
+    #endif
 }

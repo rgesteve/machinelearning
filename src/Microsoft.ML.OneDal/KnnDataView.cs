@@ -12,6 +12,7 @@ using System.Text;
 using Microsoft.ML.Data;
 using Microsoft.ML.Runtime;
 
+#if false
 internal sealed class KnnDataView : IDataTransform
 {
    
@@ -166,3 +167,4 @@ internal sealed class KnnDataView : IDataTransform
 	 }
     }
 }
+#endif
