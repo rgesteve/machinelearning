@@ -13,34 +13,16 @@ using Microsoft.ML.Trainers;
 
 namespace Microsoft.ML.Trainers.XGBoost
 {
-    /// <summary>
-    /// The <see cref="IEstimator{TTransformer}"/> for predicting a target using a binary classification model.
-    /// </summary>
-    /// <remarks>
-    /// <format type="text/markdown"><![CDATA[
-    /// To create this trainer, use [XGBoost](xref:Microsoft.ML.StandardTrainersCatalog.Prior(Microsoft.ML.BinaryClassificationCatalog.BinaryClassificationTrainers,System.String,System.String))
-    ///
-    /// [!include[io](~/../docs/samples/docs/api-reference/io-columns-binary-classification.md)]
-    ///
-    /// ### Trainer Characteristics
-    /// |  |  |
-    /// | -- | -- |
-    /// | Machine learning task | Binary classification |
-    /// | Is normalization required? | Yes |
-    /// | Is caching required? | No |
-    /// | Required NuGet in addition to Microsoft.ML | None |
-    /// | Exportable to ONNX | Yes |
-    ///
-    /// ### Training Algorithm Details
-    /// Learns the prior distribution for 0/1 class labels and outputs that.
-    /// </format>
-    /// </remarks>
-    public sealed class XGBoostTrainer : ITrainer<XGBoostModelParameters>,
+    public abstract class XGBoostTrainerBase
+#if false
+        : ITrainer<XGBoostModelParameters>,
         ITrainerEstimator<BinaryPredictionTransformer<XGBoostModelParameters>, XGBoostModelParameters>
+#endif
     {
+#if false
         internal const string LoadNameValue = "XGBoostPredictor";
         internal const string UserNameValue = "XGBoost Predictor";
-        internal const string Summary = "A trivial model for producing the prior based on the number of positive and negative examples.";
+        internal const string Summary = "The base logic for all XGBoost-based trainers.";
 
         /// <summary>
         /// The shrinkage rate for trees, used to prevent over-fitting.
@@ -68,24 +50,27 @@ namespace Microsoft.ML.Trainers.XGBoost
 	/// range: [0,\infnty]
         /// </summary>
 	public int? MinSplitLoss;
+#endif
 
-	/// <summary>
-	/// Maximum depth of a tree. Increasing this value will make the model more complex and
-	/// more likely to overfit. 0 indicates no limit on depth. Beware that XGBoost aggressively
-	/// consumes memory when training a deep tree. exact tree method requires non-zero value.
- 	/// range: [0,\infnty], default=6
-	/// </summary>
-	public int? MaxDepth;
+        /// <summary>
+        /// Maximum depth of a tree. Increasing this value will make the model more complex and
+        /// more likely to overfit. 0 indicates no limit on depth. Beware that XGBoost aggressively
+        /// consumes memory when training a deep tree. exact tree method requires non-zero value.
+        /// range: [0,\infnty], default=6
+        /// </summary>
+        public int? MaxDepth;
 
-	/// <summary>
-	/// Minimum sum of instance weight (hessian) needed in a child. If the tree partition step
-	/// results in a leaf node with the sum of instance weight less than min_child_weight, then
-	/// the building process will give up further partitioning. In linear regression task, this
-	/// simply corresponds to minimum number of instances needed to be in each node. The larger
-	/// <cref>MinChildWeight</cref> is, the more conservative the algorithm will be.
-	/// range: [0,\infnty]
-	public float? MinChildWeight;
+        /// <summary>
+        /// Minimum sum of instance weight (hessian) needed in a child. If the tree partition step
+        /// results in a leaf node with the sum of instance weight less than min_child_weight, then
+        /// the building process will give up further partitioning. In linear regression task, this
+        /// simply corresponds to minimum number of instances needed to be in each node. The larger
+        /// <cref>MinChildWeight</cref> is, the more conservative the algorithm will be.
+        /// range: [0,\infnty]
+        /// </summary>
+        public float? MinChildWeight;
 
+#if false
         /// <summary>
         /// L2 regularization term on weights. Increasing this value will make model more conservative
         /// </summary>
@@ -95,23 +80,31 @@ namespace Microsoft.ML.Trainers.XGBoost
 	/// L1 regularization term on weights. Increasing this value will make model more conservative.
 	/// </summary>
         public float? L1Regularization;
+#endif
 
-	internal sealed class Options
+        public class OptionsBase : TrainerInputBaseWithGroupId
         {
+
             // Static override name map that maps friendly names to XGBMArguments arguments.
             // If an argument is not here, then its name is identical to a lightGBM argument
             // and does not require a mapping, for example, Subsample.
-	    // For a complete list, see https://xgboost.readthedocs.io/en/latest/parameter.html
+            // For a complete list, see https://xgboost.readthedocs.io/en/latest/parameter.html
             private protected static Dictionary<string, string> NameMapping = new Dictionary<string, string>()
             {
+#if false
                {nameof(MinSplitLoss),                         "min_split_loss"},
                {nameof(NumberOfLeaves),                       "num_leaves"},
-	       {nameof(MaxDepth),                             "max_depth" },
-               {nameof(MinChildWeight),          	      "min_child_weight" },
-	       {nameof(L2Regularization),          	      "lambda" },
+#endif
+	           {nameof(MaxDepth),                             "max_depth" },
+               {nameof(MinChildWeight),                   "min_child_weight" },
+#if false
+    	       {nameof(L2Regularization),          	      "lambda" },
        	       {nameof(L1Regularization),          	      "alpha" }
+#endif
             };
 
+
+#if false
             private protected string GetOptionName(string name)
             {
                 if (NameMapping.ContainsKey(name))
@@ -119,12 +112,14 @@ namespace Microsoft.ML.Trainers.XGBoost
                 //return XGBoostInterfaceUtils.GetOptionName(name);
 		return "";
             }
-        }
+#endif
+            }
 
+#if false
         private readonly string _labelColumnName;
         private readonly string _weightColumnName;
         private readonly IHost _host;
-
+        
         /// <summary> Return the type of prediction task.</summary>
         PredictionKind ITrainer.PredictionKind => PredictionKind.BinaryClassification;
 
@@ -244,8 +239,10 @@ namespace Microsoft.ML.Trainers.XGBoost
 
             return new SchemaShape(outColumns.Values);
         }
+#endif
     }
 
+#if false
     /// <summary>
     /// Model parameters for <see cref="XGBoostTrainer"/>.
     /// </summary>
@@ -269,9 +266,9 @@ namespace Microsoft.ML.Trainers.XGBoost
 
         private readonly float _prob;
         private readonly float _raw;
-	#if false
+#if false
         bool ICanSaveOnnx.CanSaveOnnx(OnnxContext ctx) => true;
-	#endif
+#endif
 
         /// <summary>
         /// Instantiates a model that returns the prior probability of the positive class in the training set.
@@ -358,7 +355,7 @@ namespace Microsoft.ML.Trainers.XGBoost
             ctx.CreateNode(opType, new[] { castOutput, score }, new[] { scoreVarName }, ctx.GetNodeName(opType), "");
             return true;
         }
-	#endif
+#endif
 
         private protected override PredictionKind PredictionKind => PredictionKind.BinaryClassification;
 
@@ -397,6 +394,7 @@ namespace Microsoft.ML.Trainers.XGBoost
             prob = _prob;
         }
     }
+#endif
 
 #if false
     /// <summary>
@@ -1532,5 +1530,5 @@ namespace Microsoft.ML.Trainers.XGBoost
         private protected abstract void CheckAndUpdateParametersBeforeTraining(IChannel ch,
             RoleMappedData data, float[] labels, int[] groups);
     }
-    #endif
+#endif
 }

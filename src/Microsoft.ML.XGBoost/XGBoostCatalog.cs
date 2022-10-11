@@ -21,6 +21,7 @@ namespace Microsoft.ML
     /// </summary>
     public static class XGBoostExtensions
     {
+#if false
         public static XGBoostBinaryClassificationEstimator XGBoost(this BinaryClassificationCatalog.BinaryClassificationTrainers catalog,
             string labelColumnName = DefaultColumnNames.Label,
             string featureColumnName = DefaultColumnNames.Features,
@@ -33,5 +34,6 @@ namespace Microsoft.ML
             var env = CatalogUtils.GetEnvironment(catalog);
             return new XGBoostBinaryClassificationEstimator(env, labelColumnName, featureColumnName, numberOfLeaves, minimumExampleCountPerLeaf, learningRate, numberOfIterations);
         }
+#endif
     }
 }

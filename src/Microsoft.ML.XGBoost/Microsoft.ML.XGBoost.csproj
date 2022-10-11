@@ -23,8 +23,10 @@
     </ProjectReference>
   </ItemGroup>
 
+<!--
   <ItemGroup>
     <PackageReference Include="XGBoost" Version="$(XGBoostVersion)" />
   </ItemGroup>
+  -->
 
 </Project>

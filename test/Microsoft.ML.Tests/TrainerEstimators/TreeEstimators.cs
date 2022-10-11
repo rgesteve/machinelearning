@@ -17,6 +17,7 @@ using Microsoft.ML.TestFramework.Attributes;
 using Microsoft.ML.Trainers;
 using Microsoft.ML.Trainers.FastTree;
 using Microsoft.ML.Trainers.LightGbm;
+using Microsoft.ML.Trainers.XGBoost;
 using Microsoft.ML.Transforms;
 using Xunit;
 using FluentAssertions;
@@ -1096,6 +1097,17 @@ namespace Microsoft.ML.Tests.TrainerEstimators
 
             var action = () => trainer.Fit(dataView);
             action.Should().Throw<OperationCanceledException>();
+        }
+
+        [Fact]
+        public void SimpleXGBoostEstimator()
+        {
+            var options = new XGBoostRegressionTrainer.Options
+            {
+                LabelColumnName = "testlabel"
+            };
+            Assert.Equal(options.FeatureColumnName, DefaultColumnNames.Features);
+            ///Assert.Equal(options.NameMapping.Count, 2);
         }
     }
 }

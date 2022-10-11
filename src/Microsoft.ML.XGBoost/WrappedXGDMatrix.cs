@@ -1,4 +1,8 @@
-﻿using System;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using System;
 using System.Runtime.InteropServices;
 using Microsoft.ML.Runtime;
 
@@ -12,21 +16,22 @@ namespace Microsoft.ML.Trainers.XGBoost
 
         private WrappedXGBoostInterface.SafeDMatrixHandle _handle;
         public WrappedXGBoostInterface.SafeDMatrixHandle Handle => _handle;
-	private const float Missing = 0f;  // Value to use for Missing values in matrices
+        private const float Missing = 0f;  // Value to use for Missing values in matrices
 
         /// <summary>
         /// Create a <see cref="DMatrix"/> for storing training and prediction data under XGBoost framework.
+        /// </summary>
         public unsafe DMatrix(float[] data, uint nrows, uint ncols, float[] labels = null)
-	{
-	  _handle = null;
+        {
+            _handle = null;
 
-	  int errp = WrappedXGBoostInterface.XGDMatrixCreateFromMat(data, nrows, ncols, Missing, out _handle);
-	  if (errp == -1)
-	  {
-	      Contracts.Except(WrappedXGBoostInterface.XGBGetLastError());
-	  }
+            int errp = WrappedXGBoostInterface.XGDMatrixCreateFromMat(data, nrows, ncols, Missing, out _handle);
+            if (errp == -1)
+            {
+                Contracts.Except(WrappedXGBoostInterface.XGBGetLastError());
+            }
 
-	}
+        }
 
         public void Dispose()
         {
@@ -34,25 +39,27 @@ namespace Microsoft.ML.Trainers.XGBoost
             _handle = null;
         }
 
-	public ulong GetNumRows()
-	{
-	  ulong numRows;
-	  int errp = WrappedXGBoostInterface.XGDMatrixNumRow(_handle, out numRows);
-	  if (errp == -1) {
-	      Contracts.Except(WrappedXGBoostInterface.XGBGetLastError());
-	  }
-	  return numRows;
-	}
+        public ulong GetNumRows()
+        {
+            ulong numRows;
+            int errp = WrappedXGBoostInterface.XGDMatrixNumRow(_handle, out numRows);
+            if (errp == -1)
+            {
+                Contracts.Except(WrappedXGBoostInterface.XGBGetLastError());
+            }
+            return numRows;
+        }
 
-	public ulong GetNumCols()
-	{
-	  ulong numCols;
-	  int errp = WrappedXGBoostInterface.XGDMatrixNumCol(_handle, out numCols);
-	  if (errp == -1) {
-	      Contracts.Except(WrappedXGBoostInterface.XGBGetLastError());
-	  }
-	  return numCols;
-	}
+        public ulong GetNumCols()
+        {
+            ulong numCols;
+            int errp = WrappedXGBoostInterface.XGDMatrixNumCol(_handle, out numCols);
+            if (errp == -1)
+            {
+                Contracts.Except(WrappedXGBoostInterface.XGBGetLastError());
+            }
+            return numCols;
+        }
 
         public unsafe void SetLabel(float[] labels)
         {
