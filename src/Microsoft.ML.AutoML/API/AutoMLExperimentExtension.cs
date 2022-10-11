@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.ML.Runtime;
 using static Microsoft.ML.DataOperationsCatalog;
 
 namespace Microsoft.ML.AutoML
@@ -144,12 +145,23 @@ namespace Microsoft.ML.AutoML
             return experiment;
         }
 
+        public static AutoMLExperiment SetPerformanceMonitor(this AutoMLExperiment experiment, int checkIntervalInMilliseconds = 1000)
+        {
+            experiment.SetPerformanceMonitor((service) =>
+            {
+                var channel = service.GetService<IChannel>();
+
+                return new DefaultPerformanceMonitor(channel, checkIntervalInMilliseconds);
+            });
+
+            return experiment;
+        }
+
         private static AutoMLExperiment SetEvaluateMetric<TEvaluateMetricManager>(this AutoMLExperiment experiment, TEvaluateMetricManager metricManager)
             where TEvaluateMetricManager : class, IEvaluateMetricManager
         {
             experiment.ServiceCollection.AddSingleton<IMetricManager>(metricManager);
             experiment.ServiceCollection.AddSingleton<IEvaluateMetricManager>(metricManager);
-            experiment.SetIsMaximize(metricManager.IsMaximize);
 
             return experiment;
         }
