@@ -11,9 +11,12 @@ using Microsoft.ML.CommandLine;
 using Microsoft.ML.Data;
 using Microsoft.ML.EntryPoints;
 using Microsoft.ML.Internal.Utilities;
+using Microsoft.ML.Calibrators;
 using Microsoft.ML.Model.OnnxConverter;
 using Microsoft.ML.Runtime;
 using Microsoft.ML.Transforms;
+using Microsoft.ML.Trainers.FastTree;
+using Microsoft.ML.Internal.Internallearn;
 
 namespace Microsoft.ML.Trainers.XGBoost
 {
@@ -177,42 +180,35 @@ namespace Microsoft.ML.Trainers.XGBoost
     }
 #endif
 
-#if false
     /// <summary>
-    /// Model parameters for <see cref="LightGbmBinaryTrainer"/>.
+    /// Model parameters for <see cref="XGBoostBinaryTrainer"/>.
     /// </summary>
-    public sealed class LightGbmBinaryModelParameters : TreeEnsembleModelParametersBasedOnRegressionTree
+    public sealed class XGBoostBinaryModelParameters : TreeEnsembleModelParametersBasedOnRegressionTree
     {
-        internal const string LoaderSignature = "LightGBMBinaryExec";
-        internal const string RegistrationName = "LightGBMBinaryPredictor";
-
+        internal const string LoaderSignature = "XGBoostExec";
+        internal const string RegistrationName = "XGBoostPredictor";
         private static VersionInfo GetVersionInfo()
         {
             // REVIEW: can we decouple the version from FastTree predictor version ?
             return new VersionInfo(
-                modelSignature: "LGBBINCL",
+                modelSignature: "XGBBINCL",
                 // verWrittenCur: 0x00010001, // Initial
                 // verWrittenCur: 0x00010002, // _numFeatures serialized
                 // verWrittenCur: 0x00010003, // Ini content out of predictor
                 //verWrittenCur: 0x00010004, // Add _defaultValueForMissing
-                verWrittenCur: 0x00010005, // Categorical splits.
+                verWrittenCur: 0x00010001,
                 verReadableCur: 0x00010004,
                 verWeCanReadBack: 0x00010001,
                 loaderSignature: LoaderSignature,
-                loaderAssemblyName: typeof(LightGbmBinaryModelParameters).Assembly.FullName);
+                loaderAssemblyName: typeof(XGBoostBinaryModelParameters).Assembly.FullName);
         }
 
-        private protected override uint VerNumFeaturesSerialized => 0x00010002;
-        private protected override uint VerDefaultValueSerialized => 0x00010004;
-        private protected override uint VerCategoricalSplitSerialized => 0x00010005;
-        private protected override PredictionKind PredictionKind => PredictionKind.BinaryClassification;
-
-        internal LightGbmBinaryModelParameters(IHostEnvironment env, InternalTreeEnsemble trainedEnsemble, int featureCount, string innerArgs)
+        internal XGBoostBinaryModelParameters(IHostEnvironment env, InternalTreeEnsemble trainedEnsemble, int featureCount, string innerArgs)
             : base(env, RegistrationName, trainedEnsemble, featureCount, innerArgs)
         {
         }
 
-        private LightGbmBinaryModelParameters(IHostEnvironment env, ModelLoadContext ctx)
+        private XGBoostBinaryModelParameters(IHostEnvironment env, ModelLoadContext ctx)
             : base(env, RegistrationName, ctx, GetVersionInfo())
         {
         }
@@ -223,6 +219,7 @@ namespace Microsoft.ML.Trainers.XGBoost
             ctx.SetVersionInfo(GetVersionInfo());
         }
 
+#if false
         internal static IPredictorProducing<float> Create(IHostEnvironment env, ModelLoadContext ctx)
         {
             Contracts.CheckValue(env, nameof(env));
@@ -235,43 +232,50 @@ namespace Microsoft.ML.Trainers.XGBoost
                 return predictor;
             return new ValueMapperCalibratedModelParameters<LightGbmBinaryModelParameters, ICalibrator>(env, predictor, calibrator);
         }
-    }
 #endif
+        private protected override uint VerNumFeaturesSerialized { get { return 0x00010002; } }
+
+        private protected override uint VerDefaultValueSerialized => 0x00010004;
+
+        private protected override uint VerCategoricalSplitSerialized => 0x00010005;
+
+        private protected override PredictionKind PredictionKind => PredictionKind.BinaryClassification;
+    }
 
     /// <summary>
-    /// The <see cref="IEstimator{TTransformer}"/> for training a boosted decision tree binary classification model using LightGBM.
+    /// The <see cref="IEstimator{TTransformer}"/> for training a boosted decision tree binary classification model using XGBoost.
     /// </summary>
-    /// <remarks>
-    /// <format type="text/markdown"><![CDATA[
-    /// To create this trainer, use [LightGbm](xref:Microsoft.ML.LightGbmExtensions.LightGbm(Microsoft.ML.BinaryClassificationCatalog.BinaryClassificationTrainers,System.String,System.String,System.String,System.Nullable{System.Int32},System.Nullable{System.Int32},System.Nullable{System.Double},System.Int32)) or
-    /// [LightGbm(Options)](xref:Microsoft.ML.LightGbmExtensions.LightGbm(Microsoft.ML.BinaryClassificationCatalog.BinaryClassificationTrainers,Microsoft.ML.Trainers.LightGbm.LightGbmBinaryTrainer.Options)).
-    ///
-    /// [!include[io](~/../docs/samples/docs/api-reference/io-columns-binary-classification.md)]
-    ///
-    /// ### Trainer Characteristics
-    /// |  |  |
-    /// | -- | -- |
-    /// | Machine learning task | Binary classification |
-    /// | Is normalization required? | No |
-    /// | Is caching required? | No |
-    /// | Required NuGet in addition to Microsoft.ML | Microsoft.ML.LightGbm |
-    /// | Exportable to ONNX | Yes |
-    ///
-    /// [!include[algorithm](~/../docs/samples/docs/api-reference/algo-details-lightgbm.md)]
-    /// ]]>
-    /// </format>
-    /// </remarks>
-    /// <seealso cref="LightGbmExtensions.LightGbm(BinaryClassificationCatalog.BinaryClassificationTrainers, string, string, string, int?, int?, double?, int)"/>
-    /// <seealso cref="LightGbmExtensions.LightGbm(BinaryClassificationCatalog.BinaryClassificationTrainers, LightGbmBinaryTrainer.Options)"/>
-    public sealed class XGBoostBinaryTrainer : 
+    public sealed class XGBoostBinaryTrainer :
 #if true
-    XGBoostTrainerBase
+    XGBoostTrainerBase<XGBoostBinaryTrainer.Options, float, BinaryPredictionTransformer<XGBoostBinaryModelParameters>, XGBoostBinaryModelParameters>
 #else
     LightGbmTrainerBase<LightGbmBinaryTrainer.Options, float,
         BinaryPredictionTransformer<CalibratedModelParametersBase<LightGbmBinaryModelParameters, PlattCalibrator>>,
         CalibratedModelParametersBase<LightGbmBinaryModelParameters, PlattCalibrator>>
 #endif
     {
+        public XGBoostBinaryTrainer(IHost host, SchemaShape.Column feature, SchemaShape.Column label, SchemaShape.Column weight = default, SchemaShape.Column groupId = default) : base(host, feature, label, weight, groupId)
+        {
+        }
+
+        public override TrainerInfo Info => throw new NotImplementedException();
+
+        private protected override PredictionKind PredictionKind => throw new NotImplementedException();
+
+        private protected override SchemaShape.Column[] GetOutputColumnsCore(SchemaShape inputSchema)
+        {
+            throw new NotImplementedException();
+        }
+
+        private protected override BinaryPredictionTransformer<XGBoostBinaryModelParameters> MakeTransformer(XGBoostBinaryModelParameters model, DataViewSchema trainSchema)
+        {
+            throw new NotImplementedException();
+        }
+
+        private protected override XGBoostBinaryModelParameters TrainModelCore(TrainContext trainContext)
+        {
+            throw new NotImplementedException();
+        }
 #if false
         internal const string UserName = "LightGBM Binary Classifier";
         internal const string LoadNameValue = "LightGBMBinary";
@@ -281,7 +285,6 @@ namespace Microsoft.ML.Trainers.XGBoost
         private protected override PredictionKind PredictionKind => PredictionKind.BinaryClassification;
 #endif
 
-#if false
         public sealed class Options : OptionsBase
         {
 
@@ -294,6 +297,7 @@ namespace Microsoft.ML.Trainers.XGBoost
                 AreaUnderCurve,
             };
 
+#if false
             /// <summary>
             /// Whether training data is unbalanced.
             /// </summary>
@@ -348,8 +352,8 @@ namespace Microsoft.ML.Trainers.XGBoost
 
                 return res;
             }
-        }
 #endif
+        }
 
 #if false
         internal LightGbmBinaryTrainer(IHostEnvironment env, Options options)

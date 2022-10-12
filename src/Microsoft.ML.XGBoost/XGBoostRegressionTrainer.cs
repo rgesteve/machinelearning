@@ -23,42 +23,39 @@ using Microsoft.ML.Trainers.XGBoost;
 
 namespace Microsoft.ML.Trainers.XGBoost
 {
-#if false
     /// <summary>
-    /// Model parameters for <see cref="LightGbmRegressionTrainer"/>.
+    /// Model parameters for <see cref="XGBoostRegressionTrainer"/>.
     /// </summary>
-    public sealed class LightGbmRegressionModelParameters : TreeEnsembleModelParametersBasedOnRegressionTree
+    public sealed class XGBoostRegressionModelParameters : TreeEnsembleModelParametersBasedOnRegressionTree
     {
-        internal const string LoaderSignature = "LightGBMRegressionExec";
-        internal const string RegistrationName = "LightGBMRegressionPredictor";
+        internal const string LoaderSignature = "XGBoostRegressionExec";
+        internal const string RegistrationName = "XGBoostRegressionPredictor";
 
         private static VersionInfo GetVersionInfo()
         {
             // REVIEW: can we decouple the version from FastTree predictor version ?
             return new VersionInfo(
-                modelSignature: "LGBSIREG",
-                // verWrittenCur: 0x00010001, // Initial
-                // verWrittenCur: 0x00010002, // _numFeatures serialized
-                // verWrittenCur: 0x00010003, // Ini content out of predictor
-                // verWrittenCur: 0x00010004, // Add _defaultValueForMissing
-                verWrittenCur: 0x00010005, // Categorical splits.
+                modelSignature: "XGBSIREG",
+                verWrittenCur: 0x00010001, // Initial (not sure if "Categorical splits") are supported
+                                           // verWrittenCur: 0x00010002, // _numFeatures serialized
+                                           // verWrittenCur: 0x00010003, // Ini content out of predictor
+                                           // verWrittenCur: 0x00010004, // Add _defaultValueForMissing
                 verReadableCur: 0x00010004,
                 verWeCanReadBack: 0x00010001,
                 loaderSignature: LoaderSignature,
-                loaderAssemblyName: typeof(LightGbmRegressionModelParameters).Assembly.FullName);
+                loaderAssemblyName: typeof(XGBoostRegressionModelParameters).Assembly.FullName);
         }
-
         private protected override uint VerNumFeaturesSerialized => 0x00010002;
         private protected override uint VerDefaultValueSerialized => 0x00010004;
         private protected override uint VerCategoricalSplitSerialized => 0x00010005;
         private protected override PredictionKind PredictionKind => PredictionKind.Regression;
 
-        internal LightGbmRegressionModelParameters(IHostEnvironment env, InternalTreeEnsemble trainedEnsemble, int featureCount, string innerArgs)
+        internal XGBoostRegressionModelParameters(IHostEnvironment env, InternalTreeEnsemble trainedEnsemble, int featureCount, string innerArgs)
             : base(env, RegistrationName, trainedEnsemble, featureCount, innerArgs)
         {
         }
 
-        private LightGbmRegressionModelParameters(IHostEnvironment env, ModelLoadContext ctx)
+        private XGBoostRegressionModelParameters(IHostEnvironment env, ModelLoadContext ctx)
             : base(env, RegistrationName, ctx, GetVersionInfo())
         {
         }
@@ -69,15 +66,14 @@ namespace Microsoft.ML.Trainers.XGBoost
             ctx.SetVersionInfo(GetVersionInfo());
         }
 
-        internal static LightGbmRegressionModelParameters Create(IHostEnvironment env, ModelLoadContext ctx)
+        internal static XGBoostRegressionModelParameters Create(IHostEnvironment env, ModelLoadContext ctx)
         {
             Contracts.CheckValue(env, nameof(env));
             env.CheckValue(ctx, nameof(ctx));
             ctx.CheckAtModel(GetVersionInfo());
-            return new LightGbmRegressionModelParameters(env, ctx);
+            return new XGBoostRegressionModelParameters(env, ctx);
         }
     }
-#endif
 
     /// <summary>
     /// The <see cref="IEstimator{TTransformer}"/> for training a boosted decision tree regression model using XGBoost.
@@ -105,7 +101,7 @@ namespace Microsoft.ML.Trainers.XGBoost
     /// <seealso cref="Options"/>
     public sealed class XGBoostRegressionTrainer :
 #if true
-        XGBoostTrainerBase
+        XGBoostTrainerBase<XGBoostRegressionTrainer.Options, float, RegressionPredictionTransformer<XGBoostRegressionModelParameters>, XGBoostRegressionModelParameters>
 #else
         LightGbmTrainerBase<LightGbmRegressionTrainer.Options,
                                                                             float,
@@ -113,6 +109,28 @@ namespace Microsoft.ML.Trainers.XGBoost
                                                                             LightGbmRegressionModelParameters>
 #endif
     {
+        public XGBoostRegressionTrainer(IHost host, SchemaShape.Column feature, SchemaShape.Column label, SchemaShape.Column weight = default, SchemaShape.Column groupId = default) : base(host, feature, label, weight, groupId)
+        {
+        }
+
+        public override TrainerInfo Info => throw new System.NotImplementedException();
+
+        private protected override PredictionKind PredictionKind => throw new System.NotImplementedException();
+
+        private protected override SchemaShape.Column[] GetOutputColumnsCore(SchemaShape inputSchema)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        private protected override RegressionPredictionTransformer<XGBoostRegressionModelParameters> MakeTransformer(XGBoostRegressionModelParameters model, DataViewSchema trainSchema)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        private protected override XGBoostRegressionModelParameters TrainModelCore(TrainContext trainContext)
+        {
+            throw new System.NotImplementedException();
+        }
 #if false
         internal const string Summary = "XGBoost Regression";
         internal const string LoadNameValue = "XGBoostRegression";
@@ -246,5 +264,5 @@ namespace Microsoft.ML.Trainers.XGBoost
         public RegressionPredictionTransformer<LightGbmRegressionModelParameters> Fit(IDataView trainData, IDataView validationData)
             => TrainTransformer(trainData, validationData);
 #endif
-        }
+    }
 }

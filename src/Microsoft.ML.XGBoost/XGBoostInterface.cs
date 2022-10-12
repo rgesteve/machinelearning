@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -9,7 +9,7 @@ namespace Microsoft.ML.Trainers.XGBoost
 
     public class XGBoostDLLException : Exception
     {
-	public XGBoostDLLException()
+        public XGBoostDLLException()
 	{
 	  /* empty */
 	}

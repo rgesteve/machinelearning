@@ -1,4 +1,8 @@
-﻿using System;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,11 +13,14 @@ using Microsoft.ML.Internal.Internallearn;
 using Microsoft.ML.Internal.Utilities;
 using Microsoft.ML.Runtime;
 using Microsoft.ML.Trainers;
-// using Microsoft.ML.Trainers.FastTree;
+using Microsoft.ML.Trainers.FastTree;
 
 namespace Microsoft.ML.Trainers.XGBoost
 {
-    public abstract class XGBoostTrainerBase
+    public abstract class XGBoostTrainerBase<TOptions, TOutput, TTransformer, TModel> : TrainerEstimatorBaseWithGroupId<TTransformer, TModel>
+        where TTransformer : ISingleFeaturePredictionTransformer<TModel>
+        where TModel : class // IPredictorProducing<float>
+        where TOptions : XGBoostTrainerBase<TOptions, TOutput, TTransformer, TModel>.OptionsBase, new()
 #if false
         : ITrainer<XGBoostModelParameters>,
         ITrainerEstimator<BinaryPredictionTransformer<XGBoostModelParameters>, XGBoostModelParameters>
@@ -70,6 +77,10 @@ namespace Microsoft.ML.Trainers.XGBoost
         /// </summary>
         public float? MinChildWeight;
 
+        private protected XGBoostTrainerBase(IHost host, SchemaShape.Column feature, SchemaShape.Column label, SchemaShape.Column weight = default, SchemaShape.Column groupId = default) : base(host, feature, label, weight, groupId)
+        {
+        }
+
 #if false
         /// <summary>
         /// L2 regularization term on weights. Increasing this value will make model more conservative
@@ -113,7 +124,7 @@ namespace Microsoft.ML.Trainers.XGBoost
 		return "";
             }
 #endif
-            }
+        }
 
 #if false
         private readonly string _labelColumnName;
@@ -242,15 +253,19 @@ namespace Microsoft.ML.Trainers.XGBoost
 #endif
     }
 
+
 #if false
     /// <summary>
     /// Model parameters for <see cref="XGBoostTrainer"/>.
     /// </summary>
     public sealed class XGBoostModelParameters :
+#if true
+#else
         ModelParametersBase<float>,
         IDistPredictorProducing<float, float>,
         IValueMapperDist
-	//, ISingleCanSaveOnnx
+    //, ISingleCanSaveOnnx
+#endif
     {
         internal const string LoaderSignature = "XGBoostPredictor";
         private static VersionInfo GetVersionInfo()
