@@ -1107,7 +1107,7 @@ namespace Microsoft.ML.Tests.TrainerEstimators
                 LabelColumnName = "testlabel"
             };
             Assert.Equal(options.FeatureColumnName, DefaultColumnNames.Features);
-            ///Assert.Equal(options.NameMapping.Count, 2);
+            // Assert.Equal(options.NameMapping.Count, 2);
         }
     }
 }

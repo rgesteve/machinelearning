@@ -78,36 +78,8 @@ namespace Microsoft.ML.Trainers.XGBoost
     /// <summary>
     /// The <see cref="IEstimator{TTransformer}"/> for training a boosted decision tree regression model using XGBoost.
     /// </summary>
-    /// <remarks>
-    /// <format type="text/markdown"><![CDATA[
-    /// To create this trainer, use [LightGbm](xref:Microsoft.ML.LightGbmExtensions.LightGbm(Microsoft.ML.RegressionCatalog.RegressionTrainers,System.String,System.String,System.String,System.Nullable{System.Int32},System.Nullable{System.Int32},System.Nullable{System.Double},System.Int32))
-    /// or [LightGbm(Options)](xref:Microsoft.ML.LightGbmExtensions.LightGbm(Microsoft.ML.RegressionCatalog.RegressionTrainers,Microsoft.ML.Trainers.LightGbm.LightGbmRegressionTrainer.Options)).
-    ///
-    /// ### Trainer Characteristics
-    /// |  |  |
-    /// | -- | -- |
-    /// | Machine learning task | Regression |
-    /// | Is normalization required? | No |
-    /// | Is caching required? | No |
-    /// | Required NuGet in addition to Microsoft.ML | Microsoft.ML.LightGbm |
-    /// | Exportable to ONNX | Yes |
-    ///
-    /// [!include[algorithm](~/../docs/samples/docs/api-reference/algo-details-lightgbm.md)]
-    /// ]]>
-    /// </format>
-    /// </remarks>
-    /// <seealso cref="LightGbmExtensions.LightGbm(RegressionCatalog.RegressionTrainers, string, string, string, int?, int?, double?, int)"/>
-    /// <seealso cref="LightGbmExtensions.LightGbm(RegressionCatalog.RegressionTrainers, LightGbmRegressionTrainer.Options)"/>
-    /// <seealso cref="Options"/>
     public sealed class XGBoostRegressionTrainer :
-#if true
         XGBoostTrainerBase<XGBoostRegressionTrainer.Options, float, RegressionPredictionTransformer<XGBoostRegressionModelParameters>, XGBoostRegressionModelParameters>
-#else
-        LightGbmTrainerBase<LightGbmRegressionTrainer.Options,
-                                                                            float,
-                                                                            RegressionPredictionTransformer<LightGbmRegressionModelParameters>,
-                                                                            LightGbmRegressionModelParameters>
-#endif
     {
         public XGBoostRegressionTrainer(IHost host, SchemaShape.Column feature, SchemaShape.Column label, SchemaShape.Column weight = default, SchemaShape.Column groupId = default) : base(host, feature, label, weight, groupId)
         {

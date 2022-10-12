@@ -37,12 +37,13 @@ namespace Microsoft.ML.Trainers.XGBoost
 #if false
         public WrappedXGBoostInterface.SafeBoosterHandle Handle { get; private set; }
 #else
-	WrappedXGBoostInterface.SafeBoosterHandle _handle;
+        WrappedXGBoostInterface.SafeBoosterHandle _handle;
 
-        public WrappedXGBoostInterface.SafeBoosterHandle Handle {
-         get { return _handle; }
-	 /* private set; */
-	}
+        public WrappedXGBoostInterface.SafeBoosterHandle Handle
+        {
+            get { return _handle; }
+            /* private set; */
+        }
 #endif
 
 #if false
@@ -67,18 +68,18 @@ namespace Microsoft.ML.Trainers.XGBoost
         }
 #else
         public Booster(DMatrix trainDMatrix)
-	{
-	  _handle = null;
+        {
+            _handle = null;
 
-	  var dmats = new [] { trainDMatrix.Handle };
-	  var len = unchecked((ulong)dmats.Length);
- 	  var errp = WrappedXGBoostInterface.XGBoosterCreate(dmats, len, out _handle);
-	  if (errp == -1)
-	  {
-  	      string reason = WrappedXGBoostInterface.XGBGetLastError();
-              throw new XGBoostDLLException(reason);
-	  }
-	}
+            var dmats = new[] { trainDMatrix.Handle };
+            var len = unchecked((ulong)dmats.Length);
+            var errp = WrappedXGBoostInterface.XGBoosterCreate(dmats, len, out _handle);
+            if (errp == -1)
+            {
+                string reason = WrappedXGBoostInterface.XGBGetLastError();
+                throw new XGBoostDLLException(reason);
+            }
+        }
 #endif
 
 #if false
@@ -321,26 +322,25 @@ namespace Microsoft.ML.Trainers.XGBoost
             return res;
         }
 #else
-	public VBuffer<float> Predict(VBuffer<float> src)
-	{
-	  int rank = 3;
-  	  VBuffer<float> dst = new VBuffer<float>();
-	  #if false
+        public VBuffer<float> Predict(VBuffer<float> src)
+        {
+            VBuffer<float> dst = new VBuffer<float>();
+#if false
 	  var editor = VBufferEditor.Create(ref dst, rank);
           for (int i = 0; i < rank; i++)
           {
-	  #if false
+#if false
                     editor.Values[i] = VectorUtils.DotProductWithOffset(transformInfo.Eigenvectors[i], 0, in src) -
                         (transformInfo.MeanProjected == null ? 0 : transformInfo.MeanProjected[i]);
-			#endif
+#endif
           }
           dst = editor.Commit();
-	  #endif
-	  return dst;
-	}
+#endif
+            return dst;
+        }
 #endif
 
-#region IDisposable Support
+        #region IDisposable Support
         public void Dispose()
         {
             _handle?.Dispose();

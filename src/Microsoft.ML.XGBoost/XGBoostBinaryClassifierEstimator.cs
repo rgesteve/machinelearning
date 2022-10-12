@@ -7,16 +7,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.ML;
+using Microsoft.ML.Calibrators;
 using Microsoft.ML.CommandLine;
 using Microsoft.ML.Data;
 using Microsoft.ML.EntryPoints;
+using Microsoft.ML.Internal.Internallearn;
 using Microsoft.ML.Internal.Utilities;
-using Microsoft.ML.Calibrators;
 using Microsoft.ML.Model.OnnxConverter;
 using Microsoft.ML.Runtime;
-using Microsoft.ML.Transforms;
 using Microsoft.ML.Trainers.FastTree;
-using Microsoft.ML.Internal.Internallearn;
+using Microsoft.ML.Transforms;
 
 namespace Microsoft.ML.Trainers.XGBoost
 {

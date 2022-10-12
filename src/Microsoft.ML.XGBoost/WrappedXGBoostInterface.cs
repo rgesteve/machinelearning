@@ -20,15 +20,15 @@ namespace Microsoft.ML.Trainers.XGBoost
     {
         private const string DllName = "xgboost";
 
-	#region Version API
-	[DllImport(DllName)]
+        #region Version API
+        [DllImport(DllName)]
         public static extern void XGBoostVersion(out int major, out int minor, out int patch);
-	#endregion
+        #endregion
 
         #region Error API 
 
-	[DllImport(DllName)]
-	public static extern string XGBGetLastError();
+        [DllImport(DllName)]
+        public static extern string XGBGetLastError();
 
         #endregion
 
@@ -48,25 +48,25 @@ namespace Microsoft.ML.Trainers.XGBoost
             }
         }
 
-    	[DllImport(DllName)]
-	public static extern int XGDMatrixCreateFromMat(float[] data, ulong nrow, ulong ncol, 
+        [DllImport(DllName)]
+        public static extern int XGDMatrixCreateFromMat(float[] data, ulong nrow, ulong ncol,
                                                     float missing, out SafeDMatrixHandle handle);
 
-	[DllImport(DllName)]
-	public static extern int XGDMatrixFree(IntPtr handle);
-
-	[DllImport(DllName)]
-	public static extern int XGDMatrixNumRow(SafeDMatrixHandle handle, out ulong nrows);
-
-	[DllImport(DllName)]
-	public static extern int XGDMatrixNumCol(SafeDMatrixHandle handle, out ulong ncols);
-
-	[DllImport(DllName)]
-    	public static extern int XGDMatrixGetFloatInfo(SafeDMatrixHandle handle, string field, 
-                                                       out ulong len, out IntPtr result);
+        [DllImport(DllName)]
+        public static extern int XGDMatrixFree(IntPtr handle);
 
         [DllImport(DllName)]
-	public static extern int XGDMatrixSetFloatInfo(SafeDMatrixHandle handle, string field,
+        public static extern int XGDMatrixNumRow(SafeDMatrixHandle handle, out ulong nrows);
+
+        [DllImport(DllName)]
+        public static extern int XGDMatrixNumCol(SafeDMatrixHandle handle, out ulong ncols);
+
+        [DllImport(DllName)]
+        public static extern int XGDMatrixGetFloatInfo(SafeDMatrixHandle handle, string field,
+                                                           out ulong len, out IntPtr result);
+
+        [DllImport(DllName)]
+        public static extern int XGDMatrixSetFloatInfo(SafeDMatrixHandle handle, string field,
                                                    float[] array, ulong len);
         #endregion
 
@@ -87,20 +87,20 @@ namespace Microsoft.ML.Trainers.XGBoost
             }
         }
 
-	[DllImport(DllName)]
-	public static extern int XGBoosterCreate(SafeDMatrixHandle[] dmats, 
-                                             ulong len, out SafeBoosterHandle handle);
+        [DllImport(DllName)]
+        public static extern int XGBoosterCreate(SafeDMatrixHandle[] dmats,
+                                                 ulong len, out SafeBoosterHandle handle);
 
-	[DllImport(DllName)]
-	public static extern int XGBoosterFree(IntPtr handle);
+        [DllImport(DllName)]
+        public static extern int XGBoosterFree(IntPtr handle);
 
         #endregion
 
 
         #region API train
-	[DllImport(DllName)]
-	public static extern int XGBoosterUpdateOneIter(SafeBoosterHandle bHandle, int iter, 
-                                                        SafeDMatrixHandle dHandle);
+        [DllImport(DllName)]
+        public static extern int XGBoosterUpdateOneIter(SafeBoosterHandle bHandle, int iter,
+                                                            SafeDMatrixHandle dHandle);
 
 #if false
         [DllImport(DllName, EntryPoint = "LGBM_BoosterGetEvalCounts", CallingConvention = CallingConvention.StdCall)]
@@ -113,10 +113,10 @@ namespace Microsoft.ML.Trainers.XGBoost
         #endregion
 
         #region API predict
-	[DllImport(DllName)]
-	public static extern int XGBoosterPredict(SafeBoosterHandle bHandle, SafeDMatrixHandle dHandle, 
-                                              int optionMask, int ntreeLimit, 
-                                              out ulong predsLen, out IntPtr predsPtr);
+        [DllImport(DllName)]
+        public static extern int XGBoosterPredict(SafeBoosterHandle bHandle, SafeDMatrixHandle dHandle,
+                                                  int optionMask, int ntreeLimit,
+                                                  out ulong predsLen, out IntPtr predsPtr);
         #endregion
 
     }
