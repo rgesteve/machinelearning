@@ -260,6 +260,11 @@ namespace Microsoft.ML.Trainers.XGBoost
 
         private protected override PredictionKind PredictionKind => PredictionKind.BinaryClassification;
 
+        private protected override XGBoostBinaryModelParameters CreatePredictor()
+        {
+            throw new NotImplementedException();
+        }
+
         private protected override SchemaShape.Column[] GetOutputColumnsCore(SchemaShape inputSchema)
         {
             return new[]

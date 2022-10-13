@@ -81,6 +81,11 @@ namespace Microsoft.ML.Trainers.XGBoost
     public sealed class XGBoostRegressionTrainer :
         XGBoostTrainerBase<XGBoostRegressionTrainer.Options, float, RegressionPredictionTransformer<XGBoostRegressionModelParameters>, XGBoostRegressionModelParameters>
     {
+        internal const string Summary = "XGBoost Regression";
+        internal const string LoadNameValue = "XGBoostRegression";
+        internal const string ShortName = "XGBoostR";
+        internal const string UserNameValue = "XGBoost Regressor";
+
         public XGBoostRegressionTrainer(IHost host, SchemaShape.Column feature, SchemaShape.Column label, SchemaShape.Column weight = default, SchemaShape.Column groupId = default) : base(host, feature, label, weight, groupId)
         {
         }
@@ -88,6 +93,11 @@ namespace Microsoft.ML.Trainers.XGBoost
         public override TrainerInfo Info => throw new System.NotImplementedException();
 
         private protected override PredictionKind PredictionKind => PredictionKind.Regression;
+
+        private protected override XGBoostRegressionModelParameters CreatePredictor()
+        {
+            throw new System.NotImplementedException();
+        }
 
         private protected override SchemaShape.Column[] GetOutputColumnsCore(SchemaShape inputSchema)
         {
@@ -99,22 +109,6 @@ namespace Microsoft.ML.Trainers.XGBoost
 
         private protected override RegressionPredictionTransformer<XGBoostRegressionModelParameters> MakeTransformer(XGBoostRegressionModelParameters model, DataViewSchema trainSchema)
             => new RegressionPredictionTransformer<XGBoostRegressionModelParameters>(Host, model, trainSchema, FeatureColumn.Name);
-
-#if false
-        private protected override XGBoostRegressionModelParameters TrainModelCore(TrainContext trainContext)
-        {
-            throw new System.NotImplementedException();
-
-        }
-#endif        
-
-#if false
-        internal const string Summary = "XGBoost Regression";
-        internal const string LoadNameValue = "XGBoostRegression";
-        internal const string ShortName = "XGBoostR";
-        internal const string UserNameValue = "XGBoost Regressor";
-        private protected override PredictionKind PredictionKind => PredictionKind.Regression;
-#endif
 
         /// <summary>
         /// Options for the <see cref="XGBoostRegressionTrainer"/> as used in

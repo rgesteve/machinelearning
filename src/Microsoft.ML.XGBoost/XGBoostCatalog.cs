@@ -15,16 +15,28 @@ using Microsoft.ML.Trainers.XGBoost;
 namespace Microsoft.ML
 {
     /// <summary>
-    /// Collection of extension methods for the <see cref="RegressionCatalog.RegressionTrainers"/>,
-    ///  <see cref="BinaryClassificationCatalog.BinaryClassificationTrainers"/>, 
-    ///  and <see cref="MulticlassClassificationCatalog.MulticlassClassificationTrainers"/> catalogs.
+    /// Collection of extension methods for the <see cref="RegressionCatalog.RegressionTrainers"/> and
+    ///  <see cref="BinaryClassificationCatalog.BinaryClassificationTrainers"/> catalogs.
     /// </summary>
     public static class XGBoostExtensions
     {
 #if false
-        public static XGBoostBinaryClassificationEstimator XGBoost(this BinaryClassificationCatalog.BinaryClassificationTrainers catalog,
+        
+        /// <summary>
+        /// Create <see cref="XGBoostRegressionTrainer"/>, which predicts a target using a gradient boosting decision tree regression model.
+        /// </summary>
+        /// <param name="catalog">The <see cref="RegressionCatalog"/>.</param>
+        /// <param name="labelColumnName">The name of the label column. The column data must be <see cref="System.Single"/>.</param>
+        /// <param name="featureColumnName">The name of the feature column. The column data must be a known-sized vector of <see cref="System.Single"/>.</param>
+        /// <param name="exampleWeightColumnName">The name of the example weight column (optional).</param>
+        /// <param name="numberOfLeaves">The maximum number of leaves in one tree.</param>
+        /// <param name="minimumExampleCountPerLeaf">The minimal number of data points required to form a new tree leaf.</param>
+        /// <param name="learningRate">The learning rate.</param>
+        /// <param name="numberOfIterations">The number of boosting iterations. A new tree is created in each iteration, so this is equivalent to the number of trees.</param>
+        public static LightGbmRegressionTrainer LightGbm(this RegressionCatalog.RegressionTrainers catalog,
             string labelColumnName = DefaultColumnNames.Label,
             string featureColumnName = DefaultColumnNames.Features,
+            string exampleWeightColumnName = null,
             int? numberOfLeaves = null,
             int? minimumExampleCountPerLeaf = null,
             double? learningRate = null,
@@ -32,7 +44,79 @@ namespace Microsoft.ML
         {
             Contracts.CheckValue(catalog, nameof(catalog));
             var env = CatalogUtils.GetEnvironment(catalog);
-            return new XGBoostBinaryClassificationEstimator(env, labelColumnName, featureColumnName, numberOfLeaves, minimumExampleCountPerLeaf, learningRate, numberOfIterations);
+            return new LightGbmRegressionTrainer(env, labelColumnName, featureColumnName, exampleWeightColumnName, numberOfLeaves, minimumExampleCountPerLeaf, learningRate, numberOfIterations);
+        }
+
+        /// <summary>
+        /// Create <see cref="LightGbmRegressionTrainer"/> using advanced options, which predicts a target using a gradient boosting decision tree regression model.
+        /// </summary>
+        /// <param name="catalog">The <see cref="RegressionCatalog"/>.</param>
+        /// <param name="options">Trainer options.</param>
+        /// <example>
+        /// <format type="text/markdown">
+        /// <![CDATA[
+        /// [!code-csharp[LightGbmRegression](~/../docs/samples/docs/samples/Microsoft.ML.Samples/Dynamic/Trainers/Regression/LightGbmWithOptions.cs)]
+        /// ]]>
+        /// </format>
+        /// </example>
+        public static LightGbmRegressionTrainer LightGbm(this RegressionCatalog.RegressionTrainers catalog,
+            LightGbmRegressionTrainer.Options options)
+        {
+            Contracts.CheckValue(catalog, nameof(catalog));
+            var env = CatalogUtils.GetEnvironment(catalog);
+            return new LightGbmRegressionTrainer(env, options);
+        }
+
+        /// <summary>
+        /// Create <see cref="LightGbmBinaryTrainer"/>, which predicts a target using a gradient boosting decision tree binary classification.
+        /// </summary>
+        /// <param name="catalog">The <see cref="BinaryClassificationCatalog"/>.</param>
+        /// <param name="labelColumnName">The name of the label column. The column data must be <see cref="System.Boolean"/>.</param>
+        /// <param name="featureColumnName">The name of the feature column. The column data must be a known-sized vector of <see cref="System.Single"/>.</param>
+        /// <param name="exampleWeightColumnName">The name of the example weight column (optional).</param>
+        /// <param name="numberOfLeaves">The maximum number of leaves in one tree.</param>
+        /// <param name="minimumExampleCountPerLeaf">The minimal number of data points required to form a new tree leaf.</param>
+        /// <param name="learningRate">The learning rate.</param>
+        /// <param name="numberOfIterations">The number of boosting iterations. A new tree is created in each iteration, so this is equivalent to the number of trees.</param>
+        /// <example>
+        /// <format type="text/markdown">
+        /// <![CDATA[
+        /// [!code-csharp[LightGbmBinaryClassification](~/../docs/samples/docs/samples/Microsoft.ML.Samples/Dynamic/Trainers/BinaryClassification/LightGbm.cs)]
+        /// ]]>
+        /// </format>
+        /// </example>
+        public static LightGbmBinaryTrainer LightGbm(this BinaryClassificationCatalog.BinaryClassificationTrainers catalog,
+            string labelColumnName = DefaultColumnNames.Label,
+            string featureColumnName = DefaultColumnNames.Features,
+            string exampleWeightColumnName = null,
+            int? numberOfLeaves = null,
+            int? minimumExampleCountPerLeaf = null,
+            double? learningRate = null,
+            int numberOfIterations = Defaults.NumberOfIterations)
+        {
+            Contracts.CheckValue(catalog, nameof(catalog));
+            var env = CatalogUtils.GetEnvironment(catalog);
+            return new LightGbmBinaryTrainer(env, labelColumnName, featureColumnName, exampleWeightColumnName, numberOfLeaves, minimumExampleCountPerLeaf, learningRate, numberOfIterations);
+        }
+
+        /// <summary>
+        /// Create <see cref="LightGbmBinaryTrainer"/> with advanced options, which predicts a target using a gradient boosting decision tree binary classification.
+        /// </summary>
+        /// <param name="catalog">The <see cref="BinaryClassificationCatalog"/>.</param>
+        /// <param name="options">Trainer options.</param>
+        /// <example>
+        /// <format type="text/markdown">
+        /// <![CDATA[
+        /// [!code-csharp[LightGbmBinaryClassification](~/../docs/samples/docs/samples/Microsoft.ML.Samples/Dynamic/Trainers/BinaryClassification/LightGbmWithOptions.cs)]
+        /// ]]>
+        /// </format>
+        /// </example>
+        public static LightGbmBinaryTrainer LightGbm(this BinaryClassificationCatalog.BinaryClassificationTrainers catalog,
+            LightGbmBinaryTrainer.Options options)
+        {
+            Contracts.CheckValue(catalog, nameof(catalog));
+            var env = CatalogUtils.GetEnvironment(catalog);
+            return new LightGbmBinaryTrainer(env, options);
         }
 #endif
     }
