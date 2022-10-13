@@ -77,7 +77,9 @@ namespace Microsoft.ML.Trainers.XGBoost
         /// </summary>
         public float? MinChildWeight;
 
-        private protected XGBoostTrainerBase(IHost host, SchemaShape.Column feature, SchemaShape.Column label, SchemaShape.Column weight = default, SchemaShape.Column groupId = default) : base(host, feature, label, weight, groupId)
+        private protected XGBoostTrainerBase(IHost host,
+            SchemaShape.Column feature,
+            SchemaShape.Column label, SchemaShape.Column weight = default, SchemaShape.Column groupId = default) : base(host, feature, label, weight, groupId)
         {
         }
 
@@ -126,13 +128,46 @@ namespace Microsoft.ML.Trainers.XGBoost
 #endif
         }
 
+        private protected override TModel TrainModelCore(TrainContext context)
+        {
+#if true
+            return null;
+#else
+            InitializeBeforeTraining();
+
+            Host.CheckValue(context, nameof(context));
+
+            Dataset dtrain = null;
+            Dataset dvalid = null;
+            CategoricalMetaData catMetaData;
+            try
+            {
+                using (var ch = Host.Start("Loading data for XGBoost"))
+                {
+                    using (var pch = Host.StartProgressChannel("Loading data for XGBoost"))
+                    {
+                        dtrain = LoadTrainingData(ch, context.TrainingSet, out catMetaData);
+                        if (context.ValidationSet != null)
+                            dvalid = LoadValidationData(ch, dtrain, context.ValidationSet, catMetaData);
+                    }
+                }
+                using (var ch = Host.Start("Training with XGBoost"))
+                {
+                    using (var pch = Host.StartProgressChannel("Training with XGBoost"))
+                        TrainCore(ch, pch, dtrain, catMetaData, dvalid);
+                }
+            }
+            finally
+            {
+                dtrain?.Dispose();
+                dvalid?.Dispose();
+                DisposeParallelTraining();
+            }
+            return CreatePredictor();
+#endif
+        }
+
 #if false
-        private readonly string _labelColumnName;
-        private readonly string _weightColumnName;
-        private readonly IHost _host;
-        
-        /// <summary> Return the type of prediction task.</summary>
-        PredictionKind ITrainer.PredictionKind => PredictionKind.BinaryClassification;
 
         private static readonly TrainerInfo _info = new TrainerInfo(normalization: false, caching: false);
 
@@ -252,164 +287,6 @@ namespace Microsoft.ML.Trainers.XGBoost
         }
 #endif
     }
-
-
-#if false
-    /// <summary>
-    /// Model parameters for <see cref="XGBoostTrainer"/>.
-    /// </summary>
-    public sealed class XGBoostModelParameters :
-#if true
-#else
-        ModelParametersBase<float>,
-        IDistPredictorProducing<float, float>,
-        IValueMapperDist
-    //, ISingleCanSaveOnnx
-#endif
-    {
-        internal const string LoaderSignature = "XGBoostPredictor";
-        private static VersionInfo GetVersionInfo()
-        {
-            return new VersionInfo(
-                modelSignature: "PRIORPRD",
-                verWrittenCur: 0x00010001,
-                verReadableCur: 0x00010001,
-                verWeCanReadBack: 0x00010001,
-                loaderSignature: LoaderSignature,
-                loaderAssemblyName: typeof(XGBoostModelParameters).Assembly.FullName);
-        }
-
-        private readonly float _prob;
-        private readonly float _raw;
-#if false
-        bool ICanSaveOnnx.CanSaveOnnx(OnnxContext ctx) => true;
-#endif
-
-        /// <summary>
-        /// Instantiates a model that returns the prior probability of the positive class in the training set.
-        /// </summary>
-        /// <param name="env">The host environment.</param>
-        /// <param name="prob">The probability of the positive class.</param>
-        internal XGBoostModelParameters(IHostEnvironment env, float prob)
-            : base(env, LoaderSignature)
-        {
-            Host.Check(!float.IsNaN(prob));
-
-            _prob = prob;
-            _raw = 2 * _prob - 1;       // This could be other functions -- logodds for instance
-
-            _inputType = new VectorDataViewType(NumberDataViewType.Single);
-        }
-
-        private XGBoostModelParameters(IHostEnvironment env, ModelLoadContext ctx)
-            : base(env, LoaderSignature, ctx)
-        {
-            // *** Binary format ***
-            // Float: _prob
-
-            _prob = ctx.Reader.ReadFloat();
-            Host.CheckDecode(!float.IsNaN(_prob));
-
-            _raw = 2 * _prob - 1;
-
-            _inputType = new VectorDataViewType(NumberDataViewType.Single);
-        }
-
-        internal static XGBoostModelParameters Create(IHostEnvironment env, ModelLoadContext ctx)
-        {
-            Contracts.CheckValue(env, nameof(env));
-            env.CheckValue(ctx, nameof(ctx));
-            ctx.CheckAtModel(GetVersionInfo());
-            return new XGBoostModelParameters(env, ctx);
-        }
-
-        private protected override void SaveCore(ModelSaveContext ctx)
-        {
-            base.SaveCore(ctx);
-            ctx.SetVersionInfo(GetVersionInfo());
-
-            // *** Binary format ***
-            // Float: _prob
-
-            Contracts.Assert(!float.IsNaN(_prob));
-            ctx.Writer.Write(_prob);
-        }
-
-#if false
-        bool ISingleCanSaveOnnx.SaveAsOnnx(OnnxContext ctx, string[] outputs, string labelColumn)
-        {
-            Host.CheckValue(ctx, nameof(ctx));
-            Host.Check(Utils.Size(outputs) >= 3);
-
-            const int minimumOpSetVersion = 9;
-            ctx.CheckOpSetVersion(minimumOpSetVersion, LoaderSignature);
-
-            string scoreVarName = outputs[1];
-            string probVarName = outputs[2];
-            var prob = ctx.AddInitializer(_prob, "probability");
-            var score = ctx.AddInitializer(_raw, "score");
-
-            var xorOutput = ctx.AddIntermediateVariable(null, "XorOutput", true);
-            string opType = "Xor";
-            ctx.CreateNode(opType, new[] { labelColumn, labelColumn }, new[] { xorOutput }, ctx.GetNodeName(opType), "");
-
-            var notOutput = ctx.AddIntermediateVariable(null, "NotOutput", true);
-            opType = "Not";
-            ctx.CreateNode(opType, xorOutput, notOutput, ctx.GetNodeName(opType), "");
-
-            var castOutput = ctx.AddIntermediateVariable(null, "CastOutput", true);
-            opType = "Cast";
-            var node = ctx.CreateNode(opType, notOutput, castOutput, ctx.GetNodeName(opType), "");
-            var t = InternalDataKindExtensions.ToInternalDataKind(DataKind.Single).ToType();
-            node.AddAttribute("to", t);
-
-            opType = "Mul";
-            ctx.CreateNode(opType, new[] { castOutput, prob }, new[] { probVarName }, ctx.GetNodeName(opType), "");
-
-            opType = "Mul";
-            ctx.CreateNode(opType, new[] { castOutput, score }, new[] { scoreVarName }, ctx.GetNodeName(opType), "");
-            return true;
-        }
-#endif
-
-        private protected override PredictionKind PredictionKind => PredictionKind.BinaryClassification;
-
-        private readonly DataViewType _inputType;
-        DataViewType IValueMapper.InputType => _inputType;
-        DataViewType IValueMapper.OutputType => NumberDataViewType.Single;
-        DataViewType IValueMapperDist.DistType => NumberDataViewType.Single;
-
-        ValueMapper<TIn, TOut> IValueMapper.GetMapper<TIn, TOut>()
-        {
-            Contracts.Check(typeof(TIn) == typeof(VBuffer<float>));
-            Contracts.Check(typeof(TOut) == typeof(float));
-
-            ValueMapper<VBuffer<float>, float> del = Map;
-            return (ValueMapper<TIn, TOut>)(Delegate)del;
-        }
-
-        ValueMapper<TIn, TOut, TDist> IValueMapperDist.GetMapper<TIn, TOut, TDist>()
-        {
-            Contracts.Check(typeof(TIn) == typeof(VBuffer<float>));
-            Contracts.Check(typeof(TOut) == typeof(float));
-            Contracts.Check(typeof(TDist) == typeof(float));
-
-            ValueMapper<VBuffer<float>, float, float> del = MapDist;
-            return (ValueMapper<TIn, TOut, TDist>)(Delegate)del;
-        }
-
-        private void Map(in VBuffer<float> src, ref float dst)
-        {
-            dst = _raw;
-        }
-
-        private void MapDist(in VBuffer<float> src, ref float score, ref float prob)
-        {
-            score = _raw;
-            prob = _prob;
-        }
-    }
-#endif
 
 #if false
     /// <summary>
@@ -685,84 +562,6 @@ namespace Microsoft.ML.Trainers.XGBoost
 
         private static readonly TrainerInfo _info = new TrainerInfo(normalization: false, caching: false, supportValid: true);
         public override TrainerInfo Info => _info;
-
-        private protected LightGbmTrainerBase(IHostEnvironment env,
-            string name,
-            SchemaShape.Column labelColumn,
-            string featureColumnName,
-            string exampleWeightColumnName,
-            string rowGroupColumnName,
-            int? numberOfLeaves,
-            int? minimumExampleCountPerLeaf,
-            double? learningRate,
-            int numberOfIterations)
-            : this(env, name, new TOptions()
-            {
-                NumberOfLeaves = numberOfLeaves,
-                MinimumExampleCountPerLeaf = minimumExampleCountPerLeaf,
-                LearningRate = learningRate,
-                NumberOfIterations = numberOfIterations,
-                LabelColumnName = labelColumn.Name,
-                FeatureColumnName = featureColumnName,
-                ExampleWeightColumnName = exampleWeightColumnName,
-                RowGroupColumnName = rowGroupColumnName
-            },
-                  labelColumn)
-        {
-        }
-
-        private protected LightGbmTrainerBase(IHostEnvironment env, string name, TOptions options, SchemaShape.Column label)
-           : base(Contracts.CheckRef(env, nameof(env)).Register(name), TrainerUtils.MakeR4VecFeature(options.FeatureColumnName), label,
-                 TrainerUtils.MakeR4ScalarWeightColumn(options.ExampleWeightColumnName), TrainerUtils.MakeU4ScalarColumn(options.RowGroupColumnName))
-        {
-            Host.CheckValue(options, nameof(options));
-            Contracts.CheckUserArg(options.NumberOfIterations >= 0, nameof(options.NumberOfIterations), "must be >= 0.");
-            Contracts.CheckUserArg(options.MaximumBinCountPerFeature > 0, nameof(options.MaximumBinCountPerFeature), "must be > 0.");
-            Contracts.CheckUserArg(options.MinimumExampleCountPerGroup > 0, nameof(options.MinimumExampleCountPerGroup), "must be > 0.");
-            Contracts.CheckUserArg(options.MaximumCategoricalSplitPointCount > 0, nameof(options.MaximumCategoricalSplitPointCount), "must be > 0.");
-            Contracts.CheckUserArg(options.CategoricalSmoothing >= 0, nameof(options.CategoricalSmoothing), "must be >= 0.");
-            Contracts.CheckUserArg(options.L2CategoricalRegularization >= 0.0, nameof(options.L2CategoricalRegularization), "must be >= 0.");
-
-            LightGbmTrainerOptions = options;
-            ParallelTraining = LightGbmTrainerOptions.ParallelTrainer != null ? LightGbmTrainerOptions.ParallelTrainer.CreateComponent(Host) : new SingleTrainer();
-            GbmOptions = LightGbmTrainerOptions.ToDictionary(Host);
-            InitParallelTraining();
-        }
-
-        private protected override TModel TrainModelCore(TrainContext context)
-        {
-            InitializeBeforeTraining();
-
-            Host.CheckValue(context, nameof(context));
-
-            Dataset dtrain = null;
-            Dataset dvalid = null;
-            CategoricalMetaData catMetaData;
-            try
-            {
-                using (var ch = Host.Start("Loading data for LightGBM"))
-                {
-                    using (var pch = Host.StartProgressChannel("Loading data for LightGBM"))
-                    {
-                        dtrain = LoadTrainingData(ch, context.TrainingSet, out catMetaData);
-                        if (context.ValidationSet != null)
-                            dvalid = LoadValidationData(ch, dtrain, context.ValidationSet, catMetaData);
-                    }
-                }
-                using (var ch = Host.Start("Training with LightGBM"))
-                {
-                    using (var pch = Host.StartProgressChannel("Training with LightGBM"))
-                        TrainCore(ch, pch, dtrain, catMetaData, dvalid);
-                }
-            }
-            finally
-            {
-                dtrain?.Dispose();
-                dvalid?.Dispose();
-                DisposeParallelTraining();
-            }
-            return CreatePredictor();
-        }
 
         private protected virtual void InitializeBeforeTraining() { }
 

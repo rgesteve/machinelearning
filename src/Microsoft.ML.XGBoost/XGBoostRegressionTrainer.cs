@@ -87,22 +87,27 @@ namespace Microsoft.ML.Trainers.XGBoost
 
         public override TrainerInfo Info => throw new System.NotImplementedException();
 
-        private protected override PredictionKind PredictionKind => throw new System.NotImplementedException();
+        private protected override PredictionKind PredictionKind => PredictionKind.Regression;
 
         private protected override SchemaShape.Column[] GetOutputColumnsCore(SchemaShape inputSchema)
         {
-            throw new System.NotImplementedException();
+            return new[]
+            {
+                new SchemaShape.Column(DefaultColumnNames.Score, SchemaShape.Column.VectorKind.Scalar, NumberDataViewType.Single, false, new SchemaShape(AnnotationUtils.GetTrainerOutputAnnotation()))
+            };
         }
 
         private protected override RegressionPredictionTransformer<XGBoostRegressionModelParameters> MakeTransformer(XGBoostRegressionModelParameters model, DataViewSchema trainSchema)
-        {
-            throw new System.NotImplementedException();
-        }
+            => new RegressionPredictionTransformer<XGBoostRegressionModelParameters>(Host, model, trainSchema, FeatureColumn.Name);
 
+#if false
         private protected override XGBoostRegressionModelParameters TrainModelCore(TrainContext trainContext)
         {
             throw new System.NotImplementedException();
+
         }
+#endif        
+
 #if false
         internal const string Summary = "XGBoost Regression";
         internal const string LoadNameValue = "XGBoostRegression";

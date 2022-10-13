@@ -245,45 +245,30 @@ namespace Microsoft.ML.Trainers.XGBoost
     /// <summary>
     /// The <see cref="IEstimator{TTransformer}"/> for training a boosted decision tree binary classification model using XGBoost.
     /// </summary>
-    public sealed class XGBoostBinaryTrainer :
-#if true
-    XGBoostTrainerBase<XGBoostBinaryTrainer.Options, float, BinaryPredictionTransformer<XGBoostBinaryModelParameters>, XGBoostBinaryModelParameters>
-#else
-    LightGbmTrainerBase<LightGbmBinaryTrainer.Options, float,
-        BinaryPredictionTransformer<CalibratedModelParametersBase<LightGbmBinaryModelParameters, PlattCalibrator>>,
-        CalibratedModelParametersBase<LightGbmBinaryModelParameters, PlattCalibrator>>
-#endif
+    public sealed class XGBoostBinaryTrainer : XGBoostTrainerBase<XGBoostBinaryTrainer.Options, float, BinaryPredictionTransformer<XGBoostBinaryModelParameters>, XGBoostBinaryModelParameters>
     {
+        internal const string UserName = "XGBoost Binary Classifier";
+        internal const string LoadNameValue = "XGBoostBinary";
+        internal const string ShortName = "XGBoost";
+        internal const string Summary = "Train a XGBoost binary classification model.";
+
         public XGBoostBinaryTrainer(IHost host, SchemaShape.Column feature, SchemaShape.Column label, SchemaShape.Column weight = default, SchemaShape.Column groupId = default) : base(host, feature, label, weight, groupId)
         {
         }
 
         public override TrainerInfo Info => throw new NotImplementedException();
 
-        private protected override PredictionKind PredictionKind => throw new NotImplementedException();
+        private protected override PredictionKind PredictionKind => PredictionKind.BinaryClassification;
 
         private protected override SchemaShape.Column[] GetOutputColumnsCore(SchemaShape inputSchema)
         {
-            throw new NotImplementedException();
+            return new[]
+            {
+                new SchemaShape.Column(DefaultColumnNames.Score, SchemaShape.Column.VectorKind.Scalar, NumberDataViewType.Single, false, new SchemaShape(AnnotationUtils.GetTrainerOutputAnnotation()))
+            };
         }
-
         private protected override BinaryPredictionTransformer<XGBoostBinaryModelParameters> MakeTransformer(XGBoostBinaryModelParameters model, DataViewSchema trainSchema)
-        {
-            throw new NotImplementedException();
-        }
-
-        private protected override XGBoostBinaryModelParameters TrainModelCore(TrainContext trainContext)
-        {
-            throw new NotImplementedException();
-        }
-#if false
-        internal const string UserName = "LightGBM Binary Classifier";
-        internal const string LoadNameValue = "LightGBMBinary";
-        internal const string ShortName = "LightGBM";
-        internal const string Summary = "Train a LightGBM binary classification model.";
-
-        private protected override PredictionKind PredictionKind => PredictionKind.BinaryClassification;
-#endif
+            => new BinaryPredictionTransformer<XGBoostBinaryModelParameters>(Host, model, trainSchema, FeatureColumn.Name);
 
         public sealed class Options : OptionsBase
         {
@@ -396,15 +381,6 @@ namespace Microsoft.ML.Trainers.XGBoost
         {
         }
 
-        private protected override CalibratedModelParametersBase<LightGbmBinaryModelParameters, PlattCalibrator> CreatePredictor()
-        {
-            Host.Check(TrainedEnsemble != null, "The predictor cannot be created before training is complete");
-            var innerArgs = LightGbmInterfaceUtils.JoinParameters(base.GbmOptions);
-            var pred = new LightGbmBinaryModelParameters(Host, TrainedEnsemble, FeatureCount, innerArgs);
-            var cali = new PlattCalibrator(Host, -LightGbmTrainerOptions.Sigmoid, 0);
-            return new FeatureWeightsCalibratedModelParameters<LightGbmBinaryModelParameters, PlattCalibrator>(Host, pred, cali);
-        }
-
         private protected override void CheckDataValid(IChannel ch, RoleMappedData data)
         {
             Host.AssertValue(ch);
@@ -420,26 +396,10 @@ namespace Microsoft.ML.Trainers.XGBoost
         private protected override void CheckAndUpdateParametersBeforeTraining(IChannel ch, RoleMappedData data, float[] labels, int[] groups)
             => GbmOptions["objective"] = "binary";
 
-        private protected override SchemaShape.Column[] GetOutputColumnsCore(SchemaShape inputSchema)
-        {
-            return new[]
-            {
-                new SchemaShape.Column(DefaultColumnNames.Score, SchemaShape.Column.VectorKind.Scalar, NumberDataViewType.Single, false, new SchemaShape(AnnotationUtils.GetTrainerOutputAnnotation())),
-                new SchemaShape.Column(DefaultColumnNames.Probability, SchemaShape.Column.VectorKind.Scalar, NumberDataViewType.Single, false, new SchemaShape(AnnotationUtils.GetTrainerOutputAnnotation(true))),
-                new SchemaShape.Column(DefaultColumnNames.PredictedLabel, SchemaShape.Column.VectorKind.Scalar, BooleanDataViewType.Instance, false, new SchemaShape(AnnotationUtils.GetTrainerOutputAnnotation()))
-            };
-        }
 
         private protected override BinaryPredictionTransformer<CalibratedModelParametersBase<LightGbmBinaryModelParameters, PlattCalibrator>>
             MakeTransformer(CalibratedModelParametersBase<LightGbmBinaryModelParameters, PlattCalibrator> model, DataViewSchema trainSchema)
          => new BinaryPredictionTransformer<CalibratedModelParametersBase<LightGbmBinaryModelParameters, PlattCalibrator>>(Host, model, trainSchema, FeatureColumn.Name);
-
-        /// <summary>
-        /// Trains a <see cref="LightGbmBinaryTrainer"/> using both training and validation data, returns
-        /// a <see cref="BinaryPredictionTransformer{CalibratedModelParametersBase}"/>.
-        /// </summary>
-        public BinaryPredictionTransformer<CalibratedModelParametersBase<LightGbmBinaryModelParameters, PlattCalibrator>> Fit(IDataView trainData, IDataView validationData)
-            => TrainTransformer(trainData, validationData);
 #endif
     }
 }
