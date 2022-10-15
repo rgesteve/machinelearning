@@ -148,6 +148,7 @@ namespace Microsoft.ML.Trainers.XGBoost
                 res.Add(keyVal.Key + "=" + string.Format(CultureInfo.InvariantCulture, "{0}", keyVal.Value));
             return string.Join(" ", res);
         }
+#endif
 
         /// <summary>
         /// Helper function used for generating the LightGbm argument name.
@@ -174,7 +175,6 @@ namespace Microsoft.ML.Trainers.XGBoost
             }
             return strBuf.ToString();
         }
-#endif
 
         /// <summary>
         /// Convert the pointer of c string to c# string.

@@ -16,12 +16,9 @@ using Microsoft.ML.Trainers.XGBoost;
     typeof(SignatureLightGBMBooster), GradientBooster.FriendlyName, GradientBooster.Name)]
 [assembly: LoadableClass(typeof(DartBooster), typeof(DartBooster.Options),
     typeof(SignatureLightGBMBooster), DartBooster.FriendlyName, DartBooster.Name)]
-[assembly: LoadableClass(typeof(GossBooster), typeof(GossBooster.Options),
-    typeof(SignatureLightGBMBooster), GossBooster.FriendlyName, GossBooster.Name)]
 
 [assembly: EntryPointModule(typeof(GradientBooster.Options))]
 [assembly: EntryPointModule(typeof(DartBooster.Options))]
-[assembly: EntryPointModule(typeof(GossBooster.Options))]
 #endif
 
 namespace Microsoft.ML.Trainers.XGBoost
@@ -35,35 +32,39 @@ namespace Microsoft.ML.Trainers.XGBoost
         new BoosterParameterBase CreateComponent(IHostEnvironment env);
     }
 #endif
-    
+
     public abstract class BoosterParameterBase
     {
-#if false
+
         private protected static Dictionary<string, string> NameMapping = new Dictionary<string, string>()
         {
            {nameof(OptionsBase.MinimumSplitGain),               "min_split_gain" },
-           {nameof(OptionsBase.MaximumTreeDepth),               "max_depth"},
+#if false
+            {nameof(OptionsBase.MaximumTreeDepth),               "max_depth"},
            {nameof(OptionsBase.MinimumChildWeight),             "min_child_weight"},
            {nameof(OptionsBase.SubsampleFraction),              "subsample"},
            {nameof(OptionsBase.SubsampleFrequency),             "subsample_freq"},
            {nameof(OptionsBase.L1Regularization),               "reg_alpha"},
            {nameof(OptionsBase.L2Regularization),               "reg_lambda"},
+#endif
         };
+
+
         public BoosterParameterBase(OptionsBase options)
         {
             Contracts.CheckUserArg(options.MinimumSplitGain >= 0, nameof(OptionsBase.MinimumSplitGain), "must be >= 0.");
+#if false
             Contracts.CheckUserArg(options.MinimumChildWeight >= 0, nameof(OptionsBase.MinimumChildWeight), "must be >= 0.");
             Contracts.CheckUserArg(options.SubsampleFraction > 0 && options.SubsampleFraction <= 1, nameof(OptionsBase.SubsampleFraction), "must be in (0,1].");
             Contracts.CheckUserArg(options.FeatureFraction > 0 && options.FeatureFraction <= 1, nameof(OptionsBase.FeatureFraction), "must be in (0,1].");
             Contracts.CheckUserArg(options.L2Regularization >= 0, nameof(OptionsBase.L2Regularization), "must be >= 0.");
             Contracts.CheckUserArg(options.L1Regularization >= 0, nameof(OptionsBase.L1Regularization), "must be >= 0.");
+#endif
             BoosterOptions = options;
         }
-#endif
 
         public abstract class OptionsBase : IBoosterParameterFactory
         {
-#if false
             internal BoosterParameterBase GetBooster() { return null; }
             /// <summary>
             /// The minimum loss reduction required to make a further partition on a leaf node of the tree.
@@ -77,6 +78,7 @@ namespace Microsoft.ML.Trainers.XGBoost
             [TlcModule.Range(Min = 0.0)]
             public double MinimumSplitGain = 0;
 
+#if false
             /// <summary>
             /// The maximum depth of a tree.
             /// </summary>
@@ -192,33 +194,27 @@ namespace Microsoft.ML.Trainers.XGBoost
                 if (attribute == null)
                     continue;
 
-#if false
-                var name = NameMapping.ContainsKey(field.Name) ? NameMapping[field.Name] : LightGbmInterfaceUtils.GetOptionName(field.Name);
+                var name = NameMapping.ContainsKey(field.Name) ? NameMapping[field.Name] : XGBoostInterfaceUtils.GetOptionName(field.Name);
                 res[name] = field.GetValue(BoosterOptions);
-#endif
             }
         }
 
-#if false
         /// <summary>
         /// Create <see cref="IBoosterParameterFactory"/> for supporting legacy infra built upon <see cref="IComponentFactory"/>.
         /// </summary>
         internal abstract IBoosterParameterFactory BuildFactory();
         internal abstract string BoosterName { get; }
-#endif
 
         private protected OptionsBase BoosterOptions;
     }
 
-
-#if false
-        /// <summary>
-        /// Gradient boosting decision tree.
-        /// </summary>
-        /// <remarks>
-        /// For details, please see <a href="https://en.wikipedia.org/wiki/Gradient_boosting#Gradient_tree_boosting">gradient tree boosting</a>.
-        /// </remarks>
-        public sealed class GradientBooster : BoosterParameterBase
+    /// <summary>
+    /// Gradient boosting decision tree.
+    /// </summary>
+    /// <remarks>
+    /// For details, please see <a href="https://en.wikipedia.org/wiki/Gradient_boosting#Gradient_tree_boosting">gradient tree boosting</a>.
+    /// </remarks>
+    public sealed class GradientBooster : BoosterParameterBase
     {
         internal const string Name = "gbdt";
         internal const string FriendlyName = "Tree Booster";
@@ -240,20 +236,21 @@ namespace Microsoft.ML.Trainers.XGBoost
         internal override IBoosterParameterFactory BuildFactory() => BoosterOptions;
 
         internal override string BoosterName => Name;
-    }
-#endif
 
-#if false
-        /// <summary>
-        /// DART booster (Dropouts meet Multiple Additive Regression Trees)
-        /// </summary>
-        /// <remarks>
-        /// For details, please see <a href="https://arxiv.org/abs/1505.01866">here</a>.
-        /// </remarks>
-        public sealed class DartBooster : BoosterParameterBase
+    }
+
+
+    /// <summary>
+    /// DART booster (Dropouts meet Multiple Additive Regression Trees)
+    /// </summary>
+    /// <remarks>
+    /// For details, please see <a href="https://arxiv.org/abs/1505.01866">here</a>.
+    /// </remarks>
+    public sealed class DartBooster : BoosterParameterBase
     {
         internal const string Name = "dart";
         internal const string FriendlyName = "Tree Dropout Tree Booster";
+
 
         /// <summary>
         /// The options for <see cref="DartBooster"/>, used for setting <see cref="Booster"/>.
@@ -263,12 +260,15 @@ namespace Microsoft.ML.Trainers.XGBoost
         {
             static Options()
             {
+#if false
                 // Add additional name mappings
                 NameMapping.Add(nameof(TreeDropFraction), "drop_rate");
                 NameMapping.Add(nameof(MaximumNumberOfDroppedTreesPerRound), "max_drop");
                 NameMapping.Add(nameof(SkipDropFraction), "skip_drop");
+#endif
             }
 
+#if false
             /// <summary>
             /// The dropout rate, i.e. the fraction of previous trees to drop during the dropout.
             /// </summary>
@@ -304,6 +304,7 @@ namespace Microsoft.ML.Trainers.XGBoost
             /// </summary>
             [Argument(ArgumentType.AtMostOnce, HelpText = "True will enable uniform drop.")]
             public bool UniformDrop = false;
+#endif
 
             internal override BoosterParameterBase BuildOptions() => new DartBooster(this);
         }
@@ -311,13 +312,15 @@ namespace Microsoft.ML.Trainers.XGBoost
         internal DartBooster(Options options)
             : base(options)
         {
+#if false
             Contracts.CheckUserArg(options.TreeDropFraction > 0 && options.TreeDropFraction < 1, nameof(options.TreeDropFraction), "must be in (0,1).");
             Contracts.CheckUserArg(options.SkipDropFraction >= 0 && options.SkipDropFraction < 1, nameof(options.SkipDropFraction), "must be in [0,1).");
+#endif
             BoosterOptions = options;
         }
 
         internal override IBoosterParameterFactory BuildFactory() => BoosterOptions;
         internal override string BoosterName => Name;
     }
-#endif
+
 }

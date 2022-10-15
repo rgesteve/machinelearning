@@ -21,16 +21,12 @@ namespace Microsoft.ML.Trainers.XGBoost
         where TTransformer : ISingleFeaturePredictionTransformer<TModel>
         where TModel : class // IPredictorProducing<float>
         where TOptions : XGBoostTrainerBase<TOptions, TOutput, TTransformer, TModel>.OptionsBase, new()
-#if false
-        : ITrainer<XGBoostModelParameters>,
-        ITrainerEstimator<BinaryPredictionTransformer<XGBoostModelParameters>, XGBoostModelParameters>
-#endif
     {
-#if false
         internal const string LoadNameValue = "XGBoostPredictor";
         internal const string UserNameValue = "XGBoost Predictor";
         internal const string Summary = "The base logic for all XGBoost-based trainers.";
 
+#if false
         /// <summary>
         /// The shrinkage rate for trees, used to prevent over-fitting.
 	/// Also aliased to "eta"
@@ -116,16 +112,43 @@ namespace Microsoft.ML.Trainers.XGBoost
 #endif
             };
 
+            private BoosterParameterBase.OptionsBase _boosterParameter;
 
-#if false
+#if true
+            /// <summary>
+            /// Determines which booster to use.
+            /// </summary>
+            /// <value>
+            /// Available boosters are <see cref="DartBooster"/>, and <see cref="GradientBooster"/>.
+            /// </value>
+            [Argument(ArgumentType.Multiple,
+                        HelpText = "Which booster to use, can be gbtree, gblinear or dart. gbtree and dart use tree based model while gblinear uses linear function.",
+                        Name = "Booster",
+                        SortOrder = 3)]
+            internal IBoosterParameterFactory BoosterFactory = new GradientBooster.Options();
+#endif
+
+            /// <summary>
+            /// Booster parameter to use
+            /// </summary>
+            public BoosterParameterBase.OptionsBase Booster
+            {
+                get => _boosterParameter;
+
+                set
+                {
+                    _boosterParameter = value;
+                    BoosterFactory = _boosterParameter;
+                }
+
+            }
+
             private protected string GetOptionName(string name)
             {
                 if (NameMapping.ContainsKey(name))
                     return NameMapping[name];
-                //return XGBoostInterfaceUtils.GetOptionName(name);
-		return "";
+                return XGBoostInterfaceUtils.GetOptionName(name);
             }
-#endif
         }
 
         private protected override TModel TrainModelCore(TrainContext context)
@@ -167,125 +190,27 @@ namespace Microsoft.ML.Trainers.XGBoost
 #endif
         }
 
+        private protected XGBoostTrainerBase(IHostEnvironment env, string name, TOptions options, SchemaShape.Column label)
+           : base(Contracts.CheckRef(env, nameof(env)).Register(name), TrainerUtils.MakeR4VecFeature(options.FeatureColumnName), label,
+         TrainerUtils.MakeR4ScalarWeightColumn(options.ExampleWeightColumnName), TrainerUtils.MakeU4ScalarColumn(options.RowGroupColumnName))
+        {
+            Host.CheckValue(options, nameof(options));
 #if false
+            Contracts.CheckUserArg(options.NumberOfIterations >= 0, nameof(options.NumberOfIterations), "must be >= 0.");
+            Contracts.CheckUserArg(options.MaximumBinCountPerFeature > 0, nameof(options.MaximumBinCountPerFeature), "must be > 0.");
+            Contracts.CheckUserArg(options.MinimumExampleCountPerGroup > 0, nameof(options.MinimumExampleCountPerGroup), "must be > 0.");
+            Contracts.CheckUserArg(options.MaximumCategoricalSplitPointCount > 0, nameof(options.MaximumCategoricalSplitPointCount), "must be > 0.");
+            Contracts.CheckUserArg(options.CategoricalSmoothing >= 0, nameof(options.CategoricalSmoothing), "must be >= 0.");
+            Contracts.CheckUserArg(options.L2CategoricalRegularization >= 0.0, nameof(options.L2CategoricalRegularization), "must be >= 0.");
 
-        private static readonly TrainerInfo _info = new TrainerInfo(normalization: false, caching: false);
-
-        /// <summary>
-        /// Auxiliary information about the trainer in terms of its capabilities
-        /// and requirements.
-        /// </summary>
-        public TrainerInfo Info => _info;
-
-        internal XGBoostTrainer(IHostEnvironment env, Options options)
-        {
-            Contracts.CheckValue(env, nameof(env));
-            _host = env.Register(LoadNameValue);
-            _host.CheckValue(options, nameof(options));
-        }
-
-        /// <summary>
-        /// Initializes XGBoostTrainer object.
-        /// </summary>
-        internal XGBoostTrainer(IHostEnvironment env, String labelColumn, String weightColunn = null)
-        {
-            Contracts.CheckValue(env, nameof(env));
-            _host = env.Register(LoadNameValue);
-            _host.CheckValue(labelColumn, nameof(labelColumn));
-            _host.CheckValueOrNull(weightColunn);
-
-            _labelColumnName = labelColumn;
-            _weightColumnName = weightColunn != null ? weightColunn : null;
-        }
-
-        /// <summary>
-        /// Trains and returns a <see cref="BinaryPredictionTransformer{XGBoostModelParameters}"/>.
-        /// </summary>
-        public BinaryPredictionTransformer<XGBoostModelParameters> Fit(IDataView input)
-        {
-            RoleMappedData trainRoles = new RoleMappedData(input, label: _labelColumnName, feature: null, weight: _weightColumnName);
-            var pred = ((ITrainer<XGBoostModelParameters>)this).Train(new TrainContext(trainRoles));
-            return new BinaryPredictionTransformer<XGBoostModelParameters>(_host, pred, input.Schema, featureColumn: null, labelColumn: _labelColumnName);
-        }
-
-        private XGBoostModelParameters Train(TrainContext context)
-        {
-            _host.CheckValue(context, nameof(context));
-            var data = context.TrainingSet;
-            data.CheckBinaryLabel();
-            _host.CheckParam(data.Schema.Label.HasValue, nameof(data), "Missing Label column");
-            var labelCol = data.Schema.Label.Value;
-            _host.CheckParam(labelCol.Type == BooleanDataViewType.Instance, nameof(data), "Invalid type for Label column");
-
-            double pos = 0;
-            double neg = 0;
-
-            int colWeight = -1;
-            if (data.Schema.Weight?.Type == NumberDataViewType.Single)
-                colWeight = data.Schema.Weight.Value.Index;
-
-            var cols = colWeight > -1 ? new DataViewSchema.Column[] { labelCol, data.Schema.Weight.Value } : new DataViewSchema.Column[] { labelCol };
-
-            using (var cursor = data.Data.GetRowCursor(cols))
-            {
-                var getLab = cursor.GetGetter<bool>(data.Schema.Label.Value);
-                var getWeight = colWeight >= 0 ? cursor.GetGetter<float>(data.Schema.Weight.Value) : null;
-                bool lab = default;
-                float weight = 1;
-                while (cursor.MoveNext())
-                {
-                    getLab(ref lab);
-                    if (getWeight != null)
-                    {
-                        getWeight(ref weight);
-                        if (!(0 < weight && weight < float.PositiveInfinity))
-                            continue;
-                    }
-
-                    // Testing both directions effectively ignores NaNs.
-                    if (lab)
-                        pos += weight;
-                    else
-                        neg += weight;
-                }
-            }
-
-            float prob = prob = pos + neg > 0 ? (float)(pos / (pos + neg)) : float.NaN;
-            return new XGBoostModelParameters(_host, prob);
-        }
-
-        IPredictor ITrainer.Train(TrainContext context) => Train(context);
-
-        XGBoostModelParameters ITrainer<XGBoostModelParameters>.Train(TrainContext context) => Train(context);
-
-        private static SchemaShape.Column MakeFeatureColumn(string featureColumn)
-            => new SchemaShape.Column(featureColumn, SchemaShape.Column.VectorKind.Vector, NumberDataViewType.Single, false);
-
-        private static SchemaShape.Column MakeLabelColumn(string labelColumn)
-            => new SchemaShape.Column(labelColumn, SchemaShape.Column.VectorKind.Scalar, NumberDataViewType.Single, false);
-
-        /// <summary>
-        /// Returns the <see cref="SchemaShape"/> of the schema which will be produced by the transformer.
-        /// Used for schema propagation and verification in a pipeline.
-        /// </summary>
-        public SchemaShape GetOutputSchema(SchemaShape inputSchema)
-        {
-            _host.CheckValue(inputSchema, nameof(inputSchema));
-
-            var outColumns = inputSchema.ToDictionary(x => x.Name);
-
-            var newColumns = new[]
-            {
-                new SchemaShape.Column(DefaultColumnNames.Score, SchemaShape.Column.VectorKind.Scalar, NumberDataViewType.Single, false, new SchemaShape(AnnotationUtils.GetTrainerOutputAnnotation())),
-                new SchemaShape.Column(DefaultColumnNames.Probability, SchemaShape.Column.VectorKind.Scalar, NumberDataViewType.Single, false, new SchemaShape(AnnotationUtils.GetTrainerOutputAnnotation(true))),
-                new SchemaShape.Column(DefaultColumnNames.PredictedLabel, SchemaShape.Column.VectorKind.Scalar, BooleanDataViewType.Instance, false, new SchemaShape(AnnotationUtils.GetTrainerOutputAnnotation()))
-            };
-            foreach (SchemaShape.Column column in newColumns)
-                outColumns[column.Name] = column;
-
-            return new SchemaShape(outColumns.Values);
-        }
+            LightGbmTrainerOptions = options;
+            ParallelTraining = LightGbmTrainerOptions.ParallelTrainer != null ? LightGbmTrainerOptions.ParallelTrainer.CreateComponent(Host) : new SingleTrainer();
+            GbmOptions = LightGbmTrainerOptions.ToDictionary(Host);
+            InitParallelTraining();
 #endif
+        }
+
+
         private protected abstract TModel CreatePredictor();
     }
 }

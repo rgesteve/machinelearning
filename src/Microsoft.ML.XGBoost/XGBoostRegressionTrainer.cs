@@ -12,7 +12,7 @@ using Microsoft.ML.Trainers.FastTree;
 using Microsoft.ML.Trainers.XGBoost;
 
 #if false
-[assembly: LoadableClass(LightGbmRegressionTrainer.Summary, typeof(LightGbmRegressionTrainer), typeof(LightGbmRegressionTrainer.Options),
+[assembly: LoadableClass(XGBoostRegressionTrainer.Summary, typeof(XGBoostRegressionTrainer), typeof(XGBoostRegressionTrainer.Options),
     new[] { typeof(SignatureRegressorTrainer), typeof(SignatureTrainer), typeof(SignatureTreeEnsembleTrainer) },
     LightGbmRegressionTrainer.UserNameValue, LightGbmRegressionTrainer.LoadNameValue, LightGbmRegressionTrainer.ShortName, DocName = "trainer/LightGBM.md")]
 
@@ -81,10 +81,10 @@ namespace Microsoft.ML.Trainers.XGBoost
     public sealed class XGBoostRegressionTrainer :
         XGBoostTrainerBase<XGBoostRegressionTrainer.Options, float, RegressionPredictionTransformer<XGBoostRegressionModelParameters>, XGBoostRegressionModelParameters>
     {
-        internal const string Summary = "XGBoost Regression";
-        internal const string LoadNameValue = "XGBoostRegression";
+        internal new const string Summary = "XGBoost Regression";
+        internal new const string LoadNameValue = "XGBoostRegression";
         internal const string ShortName = "XGBoostR";
-        internal const string UserNameValue = "XGBoost Regressor";
+        internal new const string UserNameValue = "XGBoost Regressor";
 
         public XGBoostRegressionTrainer(IHost host, SchemaShape.Column feature, SchemaShape.Column label, SchemaShape.Column weight = default, SchemaShape.Column groupId = default) : base(host, feature, label, weight, groupId)
         {
@@ -93,11 +93,6 @@ namespace Microsoft.ML.Trainers.XGBoost
         public override TrainerInfo Info => throw new System.NotImplementedException();
 
         private protected override PredictionKind PredictionKind => PredictionKind.Regression;
-
-        private protected override XGBoostRegressionModelParameters CreatePredictor()
-        {
-            throw new System.NotImplementedException();
-        }
 
         private protected override SchemaShape.Column[] GetOutputColumnsCore(SchemaShape inputSchema)
         {
@@ -116,7 +111,6 @@ namespace Microsoft.ML.Trainers.XGBoost
         /// </summary>
         public sealed class Options : OptionsBase
         {
-#if false
             public enum EvaluateMetricType
             {
                 None,
@@ -134,6 +128,7 @@ namespace Microsoft.ML.Trainers.XGBoost
                 ShortName = "em")]
             public EvaluateMetricType EvaluationMetric = EvaluateMetricType.RootMeanSquaredError;
 
+#if false
             static Options()
             {
                 NameMapping.Add(nameof(EvaluateMetricType), "metric");
@@ -154,9 +149,8 @@ namespace Microsoft.ML.Trainers.XGBoost
 #endif
         }
 
-#if false
         /// <summary>
-        /// Initializes a new instance of <see cref="LightGbmRegressionTrainer"/>
+        /// Initializes a new instance of <see cref="XGBoostRegressionTrainer"/>
         /// </summary>
         /// <param name="env">The private instance of <see cref="IHostEnvironment"/>.</param>
         /// <param name="labelColumnName">The name of the label column.</param>
@@ -166,40 +160,52 @@ namespace Microsoft.ML.Trainers.XGBoost
         /// <param name="minimumExampleCountPerLeaf">The minimal number of data points allowed in a leaf of the tree, out of the subsampled data.</param>
         /// <param name="learningRate">The learning rate.</param>
         /// <param name="numberOfIterations">Number of iterations.</param>
-        internal LightGbmRegressionTrainer(IHostEnvironment env,
+        internal XGBoostRegressionTrainer(IHostEnvironment env,
             string labelColumnName = DefaultColumnNames.Label,
             string featureColumnName = DefaultColumnNames.Features,
-            string exampleWeightColumnName = null,
+            string exampleWeightColumnName = null
+#if false
             int? numberOfLeaves = null,
             int? minimumExampleCountPerLeaf = null,
             double? learningRate = null,
-            int numberOfIterations = Defaults.NumberOfIterations)
+            int numberOfIterations = Defaults.NumberOfIterations
+#endif
+            )
             : this(env, new Options()
             {
                 LabelColumnName = labelColumnName,
                 FeatureColumnName = featureColumnName,
                 ExampleWeightColumnName = exampleWeightColumnName,
+#if false
                 NumberOfLeaves = numberOfLeaves,
                 MinimumExampleCountPerLeaf = minimumExampleCountPerLeaf,
                 LearningRate = learningRate,
                 NumberOfIterations = numberOfIterations
+#endif
             })
         {
         }
 
-        internal LightGbmRegressionTrainer(IHostEnvironment env, Options options)
+        internal XGBoostRegressionTrainer(IHostEnvironment env, Options options)
              : base(env, LoadNameValue, options, TrainerUtils.MakeR4ScalarColumn(options.LabelColumnName))
         {
         }
 
-        private protected override LightGbmRegressionModelParameters CreatePredictor()
+        private protected override XGBoostRegressionModelParameters CreatePredictor()
         {
+#if false
             Host.Check(TrainedEnsemble != null,
                 "The predictor cannot be created before training is complete");
+#endif
+#if true
+            return null;
+#else
             var innerArgs = LightGbmInterfaceUtils.JoinParameters(GbmOptions);
             return new LightGbmRegressionModelParameters(Host, TrainedEnsemble, FeatureCount, innerArgs);
+#endif
         }
 
+#if false
         private protected override void CheckDataValid(IChannel ch, RoleMappedData data)
         {
             Host.AssertValue(ch);
@@ -227,13 +233,6 @@ namespace Microsoft.ML.Trainers.XGBoost
 
         private protected override RegressionPredictionTransformer<LightGbmRegressionModelParameters> MakeTransformer(LightGbmRegressionModelParameters model, DataViewSchema trainSchema)
             => new RegressionPredictionTransformer<LightGbmRegressionModelParameters>(Host, model, trainSchema, FeatureColumn.Name);
-
-        /// <summary>
-        /// Trains a <see cref="LightGbmRegressionTrainer"/> using both training and validation data, returns
-        /// a <see cref="RegressionPredictionTransformer{LightGbmRegressionModelParameters}"/>.
-        /// </summary>
-        public RegressionPredictionTransformer<LightGbmRegressionModelParameters> Fit(IDataView trainData, IDataView validationData)
-            => TrainTransformer(trainData, validationData);
 #endif
     }
 }

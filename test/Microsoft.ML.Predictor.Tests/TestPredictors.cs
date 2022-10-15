@@ -23,6 +23,7 @@ namespace Microsoft.ML.RunTests
     using Microsoft.ML.Trainers;
     using Microsoft.ML.Trainers.FastTree;
     using Microsoft.ML.Trainers.LightGbm;
+    using Microsoft.ML.Trainers.XGBoost;
     using Xunit;
     using Xunit.Abstractions;
     using TestLearners = TestLearnersBase;
@@ -597,6 +598,16 @@ namespace Microsoft.ML.RunTests
             var regDatasets = new[] { TestDatasets.generatedRegressionDataset };
             RunAllTests(regPredictors, regDatasets, extraTag: "RMSE", parseOption: NumberParseOption.UseSingle);
             Done();
+        }
+
+        [Fact]
+        public void RegressorXGBoost()
+        {
+            var options = new XGBoostRegressionTrainer.Options()
+            {
+                LabelColumnName = "Label"
+            };
+            Assert.True(options.LabelColumnName == "Label");
         }
 
         /// <summary>
