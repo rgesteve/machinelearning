@@ -17,6 +17,12 @@ using Microsoft.ML.Trainers.FastTree;
 
 namespace Microsoft.ML.Trainers.XGBoost
 {
+    [BestFriend]
+    internal static class Defaults
+    {
+        public const int NumberOfIterations = 100;
+    }
+
     public abstract class XGBoostTrainerBase<TOptions, TOutput, TTransformer, TModel> : TrainerEstimatorBaseWithGroupId<TTransformer, TModel>
         where TTransformer : ISingleFeaturePredictionTransformer<TModel>
         where TModel : class // IPredictorProducing<float>

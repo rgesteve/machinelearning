@@ -20,10 +20,6 @@ using Microsoft.ML.Transforms;
 
 namespace Microsoft.ML.Trainers.XGBoost
 {
-    internal static class Defaults
-    {
-        public const int NumberOfIterations = 100;
-    }
 
 #if false
     public sealed class XGBoostBinaryClassificationTransformer : OneToOneTransformerBase
