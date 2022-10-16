@@ -11,15 +11,13 @@ using Microsoft.ML.Internal.Internallearn;
 using Microsoft.ML.Runtime;
 using Microsoft.ML.Trainers.XGBoost;
 
-#if false
 [assembly: LoadableClass(typeof(GradientBooster), typeof(GradientBooster.Options),
-    typeof(SignatureLightGBMBooster), GradientBooster.FriendlyName, GradientBooster.Name)]
+    typeof(SignatureXGBoostBooster), GradientBooster.FriendlyName, GradientBooster.Name)]
 [assembly: LoadableClass(typeof(DartBooster), typeof(DartBooster.Options),
-    typeof(SignatureLightGBMBooster), DartBooster.FriendlyName, DartBooster.Name)]
+    typeof(SignatureXGBoostBooster), DartBooster.FriendlyName, DartBooster.Name)]
 
 [assembly: EntryPointModule(typeof(GradientBooster.Options))]
 [assembly: EntryPointModule(typeof(DartBooster.Options))]
-#endif
 
 namespace Microsoft.ML.Trainers.XGBoost
 {
@@ -260,15 +258,11 @@ namespace Microsoft.ML.Trainers.XGBoost
         {
             static Options()
             {
-#if false
                 // Add additional name mappings
-                NameMapping.Add(nameof(TreeDropFraction), "drop_rate");
-                NameMapping.Add(nameof(MaximumNumberOfDroppedTreesPerRound), "max_drop");
+                NameMapping.Add(nameof(TreeDropFraction), "rate_drop");
                 NameMapping.Add(nameof(SkipDropFraction), "skip_drop");
-#endif
             }
 
-#if false
             /// <summary>
             /// The dropout rate, i.e. the fraction of previous trees to drop during the dropout.
             /// </summary>
@@ -280,27 +274,16 @@ namespace Microsoft.ML.Trainers.XGBoost
             public double TreeDropFraction = 0.1;
 
             /// <summary>
-            /// The maximum number of dropped trees in a boosting round.
-            /// </summary>
-            [Argument(ArgumentType.AtMostOnce, HelpText = "Maximum number of dropped trees in a boosting round.")]
-            [TlcModule.Range(Inf = 0, Max = int.MaxValue)]
-            public int MaximumNumberOfDroppedTreesPerRound = 1;
-
-            /// <summary>
             /// The probability of skipping the dropout procedure during a boosting iteration.
             /// </summary>
             [Argument(ArgumentType.AtMostOnce, HelpText = "Probability for not dropping in a boosting round.")]
             [TlcModule.Range(Inf = 0.0, Max = 1.0)]
             public double SkipDropFraction = 0.5;
 
-            /// <summary>
-            /// Whether to enable xgboost dart mode.
-            /// </summary>
-            [Argument(ArgumentType.AtMostOnce, HelpText = "True will enable xgboost dart mode.")]
-            public bool XgboostDartMode = false;
-
+#if false
             /// <summary>
             /// Whether to enable uniform drop.
+            /// Allowed values: "uniform" or "weighted"
             /// </summary>
             [Argument(ArgumentType.AtMostOnce, HelpText = "True will enable uniform drop.")]
             public bool UniformDrop = false;
@@ -312,10 +295,8 @@ namespace Microsoft.ML.Trainers.XGBoost
         internal DartBooster(Options options)
             : base(options)
         {
-#if false
             Contracts.CheckUserArg(options.TreeDropFraction > 0 && options.TreeDropFraction < 1, nameof(options.TreeDropFraction), "must be in (0,1).");
             Contracts.CheckUserArg(options.SkipDropFraction >= 0 && options.SkipDropFraction < 1, nameof(options.SkipDropFraction), "must be in [0,1).");
-#endif
             BoosterOptions = options;
         }
 
