@@ -4,7 +4,6 @@
 
 using System;
 using System.Runtime.InteropServices;
-using Microsoft.ML.Runtime;
 
 namespace Microsoft.ML.Trainers.XGBoost
 {
@@ -13,30 +12,28 @@ namespace Microsoft.ML.Trainers.XGBoost
     /// </summary>
     internal sealed class DMatrix : IDisposable
     {
-
-        private WrappedXGBoostInterface.SafeDMatrixHandle _handle;
-        public WrappedXGBoostInterface.SafeDMatrixHandle Handle => _handle;
-        private const float Missing = 0f;  // Value to use for Missing values in matrices
+        private bool disposed = false;
+        private IntPtr _handle;
+        public IntPtr Handle => _handle;
+        private const float Missing = 0f;
 
         /// <summary>
         /// Create a <see cref="DMatrix"/> for storing training and prediction data under XGBoost framework.
         /// </summary>
-        public unsafe DMatrix(float[] data, uint nrows, uint ncols, float[] labels = null)
+        public unsafe DMatrix(float[] data, uint nrows, uint ncols, float[]? labels = null)
         {
-            _handle = null;
-
             int errp = WrappedXGBoostInterface.XGDMatrixCreateFromMat(data, nrows, ncols, Missing, out _handle);
             if (errp == -1)
             {
-                Contracts.Except(WrappedXGBoostInterface.XGBGetLastError());
+                string reason = WrappedXGBoostInterface.XGBGetLastError();
+                throw new XGBoostDLLException(reason);
             }
 
-        }
+            if (labels != null)
+            {
+                SetLabel(labels);
+            }
 
-        public void Dispose()
-        {
-            _handle?.Dispose();
-            _handle = null;
         }
 
         public ulong GetNumRows()
@@ -45,7 +42,8 @@ namespace Microsoft.ML.Trainers.XGBoost
             int errp = WrappedXGBoostInterface.XGDMatrixNumRow(_handle, out numRows);
             if (errp == -1)
             {
-                Contracts.Except(WrappedXGBoostInterface.XGBGetLastError());
+                string reason = WrappedXGBoostInterface.XGBGetLastError();
+                throw new XGBoostDLLException(reason);
             }
             return numRows;
         }
@@ -56,20 +54,51 @@ namespace Microsoft.ML.Trainers.XGBoost
             int errp = WrappedXGBoostInterface.XGDMatrixNumCol(_handle, out numCols);
             if (errp == -1)
             {
-                Contracts.Except(WrappedXGBoostInterface.XGBGetLastError());
+                string reason = WrappedXGBoostInterface.XGBGetLastError();
+                throw new XGBoostDLLException(reason);
             }
             return numCols;
         }
 
         public unsafe void SetLabel(float[] labels)
         {
-            Contracts.AssertValue(labels);
 #if false
+            Contracts.AssertValue(labels);
             Contracts.Assert(labels.Length == GetNumRows());
-            fixed (float* ptr = labels)
-                LightGbmInterfaceUtils.Check(WrappedLightGbmInterface.DatasetSetField(_handle, "label", (IntPtr)ptr, labels.Length,
-                    WrappedLightGbmInterface.CApiDType.Float32));
 #endif
+            fixed (float* ptr = labels)
+            {
+                int errp = WrappedXGBoostInterface.XGDMatrixSetFloatInfo(_handle, "label", (IntPtr)ptr, (ulong)labels.Length);
+                if (errp == -1)
+                {
+                    string reason = WrappedXGBoostInterface.XGBGetLastError();
+                    throw new XGBoostDLLException(reason);
+                }
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        void Dispose(bool disposing)
+        {
+            if (disposed)
+            {
+                return;
+            }
+
+            int errp = WrappedXGBoostInterface.XGDMatrixFree(_handle);
+            if (errp == -1)
+            {
+                string reason = WrappedXGBoostInterface.XGBGetLastError();
+                throw new XGBoostDLLException(reason);
+            }
+            disposed = true;
+
         }
     }
 }
+

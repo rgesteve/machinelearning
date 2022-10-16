@@ -23,10 +23,12 @@
     </ProjectReference>
   </ItemGroup>
 
-<!--
   <ItemGroup>
+  <!--
     <PackageReference Include="XGBoost" Version="$(XGBoostVersion)" />
+      -->
+    <PackageReference Include="System.Text.Json" Version="7.0.0-rc.2.22472.3" />
   </ItemGroup>
-  -->
+
 
 </Project>
